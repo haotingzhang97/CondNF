@@ -29,18 +29,18 @@ def load_data(opt):
         train_sub = indices[0:K]
         train_set.data = train_set.data[train_sub]
         train_set.targets = train_set.targets[train_sub]
-        # transform from (n, 28, 28) to (n, 1, 128, 128)
+        # transform from (n, 28, 28) to (n, 1, opt.newsize, opt.newsize)
         train_set.data = torch.unsqueeze(train_set.data, 1);
         test_set.data = torch.unsqueeze(test_set.data, 1)
-        if resize:
+        if opt.resize:
             transform_resize = transforms.Compose([
                 transforms.ToPILImage(),
-                transforms.Resize((128, 128)),
+                transforms.Resize((opt.newsize, opt.newsize)),
                 transforms.ToTensor(),
                 # transforms.Lambda(lambda x: x.repeat(3, 1, 1) ),
             ])
-            train_set_resized = torch.zeros([len(train_set.data), 1, 128, 128])
-            test_set_resized = torch.zeros([len(test_set.data), 1, 128, 128])
+            train_set_resized = torch.zeros([len(train_set.data), 1, opt.newsize, opt.newsize])
+            test_set_resized = torch.zeros([len(test_set.data), 1, opt.newsize, opt.newsize])
             for i in range(len(train_set.data)):
                 train_set_resized[i, :, :, :] = transform_resize(train_set.data[i, :, :, :])
             for i in range(len(test_set.data)):

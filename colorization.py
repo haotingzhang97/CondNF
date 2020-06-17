@@ -9,7 +9,6 @@ from torch.autograd import Variable
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
 import torch.nn.functional as F
-import torch.optim as optim
 
 
 def colorize(data, labels, p, d=1):

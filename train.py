@@ -1,8 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-import random
-import os
 import torch
 import torch.nn as nn
 import torch.nn.init as init
@@ -13,8 +10,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torch.utils.data as Data
 import copy
-from colorization import *
 
+from colorization import *
 from options.train_options import TrainOptions
 from dataloader import load_data
 from models import create_model
@@ -79,8 +76,8 @@ if __name__ == '__main__':
 
     print('Training finished')
     torch.save(model, opt.save_model_name)
-    '''
-    model = torch.load('./savedmodel/model1.pt')
+
+    #model = torch.load(opt.save_model_name)
     print('Visualise on test set')
     for digit in range(10):
         plt.figure()
@@ -108,4 +105,4 @@ if __name__ == '__main__':
             output = model.forward().numpy()
         fig0 = np.swapaxes(np.swapaxes(np.squeeze(output), 0, 1), 1, 2)
         ax3.imshow(fig0)
-    '''
+

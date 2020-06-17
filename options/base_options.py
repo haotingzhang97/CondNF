@@ -18,7 +18,8 @@ class BaseOptions():
         # basic parameters
         parser.add_argument('--dataset_name', type=str, default='MNIST', help='dataset name')
         parser.add_argument('--subset', type=float, default=0.1, help='the percentage of training data loaded')
-        parser.add_argument('--resize', type=str, default='False', help='whether resize to 128*128 in Unet')
+        parser.add_argument('--resize', type=str, default='False', help='whether resize data')
+        parser.add_argument('--newsize', type=str, default=128, help='the new size of each side, if resize==True')
         parser.add_argument('--name', type=str, default='experiment_name', help='name of the experiment. It decides where to store samples and models')
         parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
