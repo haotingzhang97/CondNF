@@ -56,7 +56,10 @@ class MSGAN(BaseModel):
             z = torch.rand(batch_size, nz) * 2.0 - 1.0
         elif random_type == 'gauss':
             z = torch.randn(batch_size, nz)
-        return z
+        if self.gpu_ids == -1:
+            return z
+        else:
+            return z.to('cuda')
 
     def encode(self, input_image):
         mu, logvar = self.netE.forward(input_image)
