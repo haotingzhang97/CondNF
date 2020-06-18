@@ -33,6 +33,20 @@ def get_norm_layer(norm_type='instance'):
     return norm_layer
 
 
+def get_non_linearity(layer_type='relu'):
+    if layer_type == 'relu':
+        nl_layer = functools.partial(nn.ReLU, inplace=True)
+    elif layer_type == 'lrelu':
+        nl_layer = functools.partial(
+            nn.LeakyReLU, negative_slope=0.2, inplace=True)
+    elif layer_type == 'elu':
+        nl_layer = functools.partial(nn.ELU, inplace=True)
+    else:
+        raise NotImplementedError(
+            'nonlinearity activitation [%s] is not found' % layer_type)
+    return nl_layer
+
+
 def get_scheduler(optimizer, opt):
     """Return a learning rate scheduler
     Parameters:
@@ -143,6 +157,25 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
         net = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % netG)
+    return init_net(net, init_type, init_gain, gpu_ids)
+
+
+def define_G_MS(input_nc, output_nc, nz, ngf,
+             netG='unet_128', norm='batch', nl='relu',
+             use_dropout=False, init_type='xavier', upsample='bilinear', init_gain=0.02, gpu_ids=[]):
+    net = None
+    norm_layer = get_norm_layer(norm_type=norm)
+    nl_layer = get_non_linearity(layer_type=nl)
+
+    if netG == 'unet_128':
+        net = G_Unet_add_input(input_nc, output_nc, nz, 7, ngf, norm_layer=norm_layer, nl_layer=nl_layer,
+                               use_dropout=use_dropout, upsample=upsample)
+    elif netG == 'unet_256':
+        net = G_Unet_add_input(input_nc, output_nc, nz, 8, ngf, norm_layer=norm_layer, nl_layer=nl_layer,
+                               use_dropout=use_dropout, upsample=upsample)
+    else:
+        raise NotImplementedError('Generator model name [%s] is not recognized' % net)
+
     return init_net(net, init_type, init_gain, gpu_ids)
 
 
@@ -431,6 +464,45 @@ class UnetGenerator(nn.Module):
         return self.model(input)
 
 
+# Defines the Unet generator (in MSGAN)
+# |num_downs|: number of downsamplings in UNet. For example,
+# if |num_downs| == 7, image of size 128x128 will become of size 1x1
+# at the bottleneck
+class G_Unet_add_input(nn.Module):
+    def __init__(self, input_nc, output_nc, nz, num_downs, ngf=64,
+                 norm_layer=None, nl_layer=None, use_dropout=False,
+                 upsample='basic'):
+        super(G_Unet_add_input, self).__init__()
+        self.nz = nz
+        max_nchn = 8
+        # construct unet structure
+        unet_block = UnetBlock(ngf * max_nchn, ngf * max_nchn, ngf * max_nchn,
+                               innermost=True, norm_layer=norm_layer, nl_layer=nl_layer, upsample=upsample)
+        for i in range(num_downs - 5):
+            unet_block = UnetBlock(ngf * max_nchn, ngf * max_nchn, ngf * max_nchn, unet_block,
+                                   norm_layer=norm_layer, nl_layer=nl_layer, use_dropout=use_dropout, upsample=upsample)
+        unet_block = UnetBlock(ngf * 4, ngf * 4, ngf * max_nchn, unet_block,
+                               norm_layer=norm_layer, nl_layer=nl_layer, upsample=upsample)
+        unet_block = UnetBlock(ngf * 2, ngf * 2, ngf * 4, unet_block,
+                               norm_layer=norm_layer, nl_layer=nl_layer, upsample=upsample)
+        unet_block = UnetBlock(ngf, ngf, ngf * 2, unet_block,
+                               norm_layer=norm_layer, nl_layer=nl_layer, upsample=upsample)
+        unet_block = UnetBlock(input_nc + nz, output_nc, ngf, unet_block,
+                               outermost=True, norm_layer=norm_layer, nl_layer=nl_layer, upsample=upsample)
+
+        self.model = unet_block
+
+    def forward(self, x, z=None):
+        if self.nz > 0:
+            z_img = z.view(z.size(0), z.size(1), 1, 1).expand(
+                z.size(0), z.size(1), x.size(2), x.size(3))
+            x_with_z = torch.cat([x, z_img], 1)
+        else:
+            x_with_z = x  # no z
+
+        return self.model(x_with_z)
+
+
 class UnetSkipConnectionBlock(nn.Module):
     """Defines the Unet submodule with skip connection.
         X -------------------identity----------------------
@@ -498,6 +570,72 @@ class UnetSkipConnectionBlock(nn.Module):
             return self.model(x)
         else:   # add skip connections
             return torch.cat([x, self.model(x)], 1)
+
+
+# Defines the submodule with skip connection (in MSGAN)
+# X -------------------identity---------------------- X
+#   |-- downsampling -- |submodule| -- upsampling --|
+class UnetBlock(nn.Module):
+    def __init__(self, input_nc, outer_nc, inner_nc,
+                 submodule=None, outermost=False, innermost=False,
+                 norm_layer=None, nl_layer=None, use_dropout=False, upsample='basic', padding_type='zero'):
+        super(UnetBlock, self).__init__()
+        self.outermost = outermost
+        p = 0
+        downconv = []
+        if padding_type == 'reflect':
+            downconv += [nn.ReflectionPad2d(1)]
+        elif padding_type == 'replicate':
+            downconv += [nn.ReplicationPad2d(1)]
+        elif padding_type == 'zero':
+            p = 1
+        else:
+            raise NotImplementedError(
+                'padding [%s] is not implemented' % padding_type)
+        downconv += [nn.Conv2d(input_nc, inner_nc,
+                               kernel_size=4, stride=2, padding=p)]
+        # downsample is different from upsample
+        downrelu = nn.LeakyReLU(0.2, True)
+        downnorm = norm_layer(inner_nc) if norm_layer is not None else None
+        uprelu = nl_layer()
+        upnorm = norm_layer(outer_nc) if norm_layer is not None else None
+
+        if outermost:
+            upconv = upsampleLayer(
+                inner_nc * 2, outer_nc, upsample=upsample, padding_type=padding_type)
+            down = downconv
+            up = [uprelu] + upconv + [nn.Tanh()]
+            model = down + [submodule] + up
+        elif innermost:
+            upconv = upsampleLayer(
+                inner_nc, outer_nc, upsample=upsample, padding_type=padding_type)
+            down = [downrelu] + downconv
+            up = [uprelu] + upconv
+            if upnorm is not None:
+                up += [upnorm]
+            model = down + up
+        else:
+            upconv = upsampleLayer(
+                inner_nc * 2, outer_nc, upsample=upsample, padding_type=padding_type)
+            down = [downrelu] + downconv
+            if downnorm is not None:
+                down += [downnorm]
+            up = [uprelu] + upconv
+            if upnorm is not None:
+                up += [upnorm]
+
+            if use_dropout:
+                model = down + [submodule] + up + [nn.Dropout(0.5)]
+            else:
+                model = down + [submodule] + up
+
+        self.model = nn.Sequential(*model)
+
+    def forward(self, x):
+        if self.outermost:
+            return self.model(x)
+        else:
+            return torch.cat([self.model(x), x], 1)
 
 
 class NLayerDiscriminator(nn.Module):
@@ -576,3 +714,18 @@ class PixelDiscriminator(nn.Module):
     def forward(self, input):
         """Standard forward."""
         return self.net(input)
+
+
+def upsampleLayer(inplanes, outplanes, upsample='basic', padding_type='zero'):
+    # padding_type = 'zero'
+    if upsample == 'basic':
+        upconv = [nn.ConvTranspose2d(
+            inplanes, outplanes, kernel_size=4, stride=2, padding=1)]
+    elif upsample == 'bilinear':
+        upconv = [nn.Upsample(scale_factor=2, mode='bilinear'),
+                  nn.ReflectionPad2d(1),
+                  nn.Conv2d(inplanes, outplanes, kernel_size=3, stride=1, padding=0)]
+    else:
+        raise NotImplementedError(
+            'upsample layer [%s] not implemented' % upsample)
+    return upconv

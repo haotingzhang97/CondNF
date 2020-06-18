@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.nn.init as init
@@ -26,7 +25,7 @@ if __name__ == '__main__':
         p[i, 1] = 0.1
         p[i, 2] = 1 - p[i, 0] - p[i, 1]
     opt.p = p
-    train_data, train_targets, test_data, test_targets, train_set_colorized = load_data(opt)  # create a dataset given opt.dataset_mode and other options
+    train_data, train_targets, _, _, train_set_colorized = load_data(opt)  # create a dataset given opt.dataset_mode and other options
     dataset_size = len(train_targets)    # get the number of images in the dataset.
     print('The number of training images = %d' % dataset_size)
 
@@ -38,7 +37,7 @@ if __name__ == '__main__':
     model = create_model(opt)
     if opt.model_name == 'unet':
         model = model.to(device)      # create a model given opt.model and other options
-    elif opt.model_name == 'pix2pix':
+    elif opt.model_name == 'pix2pix' or opt.model_name == 'MSGAN':
         model.netD = model.netD.to(device)
         model.netG = model.netG.to(device)
         model.criterionGAN = model.criterionGAN.to(device)
@@ -47,7 +46,7 @@ if __name__ == '__main__':
     total_iters = 0                # the total number of training iterations
 
     print('Start training')
-    for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):    # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
+    for epoch in range(1, opt.n_epochs + opt.n_epochs_decay + 1):    # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
         epoch_iter = 0                  # the number of training iterations in current epoch, reset to 0 every epoch
 
         for i, data in enumerate(dataset):  # inner loop within one epoch
@@ -62,6 +61,8 @@ if __name__ == '__main__':
                 model.update_parameters()    # get gradients, update network weights
             if opt.model_name == 'pix2pix':
                 lossD_print, lossG_print = model.optimize_parameters()
+            if opt.model_name == 'MSGAN':
+                lossD_print, lossG_print, losslz_print = model.optimize_parameters()
 
         if opt.model_name == 'unet':
             if device == 'cuda':
@@ -73,36 +74,11 @@ if __name__ == '__main__':
                 print('Epoch {} done, '.format(epoch), 'discriminator loss {}'.format(lossD_print.detach().cpu().numpy()), 'generator loss {}'.format(lossG_print.detach().cpu().numpy()))
             else:
                 print('Epoch {} done, '.format(epoch), 'discriminator loss {}'.format(lossD_print.numpy()), 'generator loss {}'.format(lossG_print.numpy()))
+        if opt.model_name == 'MSGAN':
+            if device == 'cuda':
+                print('Epoch {} done, '.format(epoch), 'discriminator loss {}'.format(lossD_print.detach().cpu().numpy()), 'generator loss {}'.format(lossG_print.detach().cpu().numpy()), 'mode seeking loss {}'.format(losslz_print.detach().cpu().numpy()))
+            else:
+                print('Epoch {} done, '.format(epoch), 'discriminator loss {}'.format(lossD_print.numpy()), 'generator loss {}'.format(lossG_print.numpy()), 'mode seeking loss {}'.format(losslz_print.numpy()))
 
     print('Training finished')
     torch.save(model, opt.save_model_name)
-
-    #model = torch.load(opt.save_model_name)
-    print('Visualise on test set')
-    for digit in range(10):
-        plt.figure()
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
-        ind = np.where(test_targets == digit)[0]
-        i = ind[np.random.randint(0, len(ind), 1)]
-        input = test_data[i, :, :, :].to(device).float()
-        input0 = input.detach().cpu().numpy()
-        meanlabel = p[digit, 0] * colorize_red(input0, 1) + p[digit, 1] * colorize_green(input0, 1) + p[digit, 2] * colorize_blue(input0, 1)
-        if np.argmax(p[digit, :]) == 0:
-            modelabel = colorize_red(input0, 1)
-        elif np.argmax(p[digit, :]) == 1:
-            modelabel = colorize_green(input0, 1)
-        else:
-            modelabel = colorize_blue(input0, 1)
-        fig0 = np.swapaxes(np.swapaxes(np.squeeze(meanlabel), 0, 1), 1, 2)
-        ax1.imshow(fig0)
-        fig0 = np.swapaxes(np.swapaxes(np.squeeze(modelabel), 0, 1), 1, 2)
-        ax2.imshow(fig0)
-        model.isTrain = False
-        model.set_input(input)
-        if device == 'cuda':
-            output = model.forward().detach().cpu().numpy()
-        else:
-            output = model.forward().numpy()
-        fig0 = np.swapaxes(np.swapaxes(np.squeeze(output), 0, 1), 1, 2)
-        ax3.imshow(fig0)
-
