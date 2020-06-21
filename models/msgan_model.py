@@ -95,10 +95,10 @@ class MSGAN(BaseModel):
         pred_fake2 = netD(fake2.detach())
         # real
         pred_real = netD(real)
-        loss_D_fake1, _ = self.criterionGAN(pred_fake1, False)
-        loss_D_fake2, _ = self.criterionGAN(pred_fake2, False)
-        loss_D_real1, _ = self.criterionGAN(pred_real, True)
-        loss_D_real2, _ = self.criterionGAN(pred_real, True)
+        loss_D_fake1 = self.criterionGAN(pred_fake1, False)
+        loss_D_fake2 = self.criterionGAN(pred_fake2, False)
+        loss_D_real1 = self.criterionGAN(pred_real, True)
+        loss_D_real2 = self.criterionGAN(pred_real, True)
         # Combined loss
         loss_D = loss_D_fake1 + loss_D_fake2 + loss_D_real1 + loss_D_real2
         loss_D.backward()
@@ -107,7 +107,7 @@ class MSGAN(BaseModel):
     def backward_G_GAN(self, fake, netD=None, ll=0.0):
         if ll > 0.0:
             pred_fake = netD(fake)
-            loss_G_GAN, _ = self.criterionGAN(pred_fake, True)
+            loss_G_GAN = self.criterionGAN(pred_fake, True)
         else:
             loss_G_GAN = 0
         return loss_G_GAN * ll

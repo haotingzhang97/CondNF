@@ -68,17 +68,17 @@ if __name__ == '__main__':
             if device == 'cuda':
                 print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss_print.detach().cpu().numpy()))
             else:
-                print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss_print.numpy()))
+                print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss_print.detach().numpy()))
         if opt.model_name == 'pix2pix':
             if device == 'cuda':
                 print('Epoch {} done, '.format(epoch), 'discriminator loss {}'.format(lossD_print.detach().cpu().numpy()), 'generator loss {}'.format(lossG_print.detach().cpu().numpy()))
             else:
-                print('Epoch {} done, '.format(epoch), 'discriminator loss {}'.format(lossD_print.numpy()), 'generator loss {}'.format(lossG_print.numpy()))
+                print('Epoch {} done, '.format(epoch), 'discriminator loss {}'.format(lossD_print.detach().numpy()), 'generator loss {}'.format(lossG_print.detach().numpy()))
         if opt.model_name == 'MSGAN':
             if device == 'cuda':
                 print('Epoch {} done, '.format(epoch), 'discriminator loss {}'.format(lossD_print.detach().cpu().numpy()), 'generator loss {}'.format(lossG_print.detach().cpu().numpy()), 'mode seeking loss {}'.format(losslz_print.detach().cpu().numpy()))
             else:
-                print('Epoch {} done, '.format(epoch), 'discriminator loss {}'.format(lossD_print.numpy()), 'generator loss {}'.format(lossG_print.numpy()), 'mode seeking loss {}'.format(losslz_print.numpy()))
+                print('Epoch {} done, '.format(epoch), 'discriminator loss {}'.format(lossD_print.detach().numpy()), 'generator loss {}'.format(lossG_print.detach().numpy()), 'mode seeking loss {}'.format(losslz_print.detach().numpy()))
 
     print('Training finished')
     torch.save(model, opt.save_model_name)

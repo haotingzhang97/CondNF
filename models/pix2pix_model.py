@@ -98,7 +98,9 @@ class Pix2PixModel(BaseModel):
         # First, G(A) should fake the discriminator
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)
         pred_fake = self.netD(fake_AB)
+        print(pred_fake.size())
         self.loss_G_GAN = self.criterionGAN(pred_fake, True)
+        print(self.loss_G_GAN)
         # Second, G(A) = B
         self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
         # combine loss and calculate gradients
