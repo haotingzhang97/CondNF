@@ -56,10 +56,13 @@ class MSGAN(BaseModel):
             z = torch.rand(batch_size, nz) * 2.0 - 1.0
         elif random_type == 'gauss':
             z = torch.randn(batch_size, nz)
-        if self.gpu_ids == -1:
-            return z
-        else:
-            return z.to('cuda')
+        #if self.gpu_ids == -1:
+        #    return z
+        #else:
+        #    return z.to(cuda)
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        return z.to(device)
+
 
     def encode(self, input_image):
         mu, logvar = self.netE.forward(input_image)
@@ -87,6 +90,8 @@ class MSGAN(BaseModel):
         self.fake_B_random2_condition = torch.cat((self.real_A, self.fake_B_random2), 1)
 
         self.real_B_condition = torch.cat((self.real_A, self.real_B), 1)
+
+        return self.fake_B_random1_condition, self.fake_B_random2_condition
 
 
     def backward_D(self, netD, real, fake1, fake2):
@@ -127,9 +132,9 @@ class MSGAN(BaseModel):
         lz = torch.mean(torch.abs(self.fake_B_random2 - self.fake_B_random1)) / torch.mean(torch.abs(self.z_random2 - self.z_random1))
         eps = 1 * 1e-5
         loss_lz = 1 / (lz + eps)
-        self.loss_lz = loss_lz
+        self.loss_lz = loss_lz * self.opt.lambda_ms
 
-        self.loss_G = self.loss_G_GAN + self.loss_lz+ self.loss_G_L1
+        self.loss_G = self.loss_G_GAN + self.loss_lz + self.loss_G_L1
         self.loss_G.backward()
         return self.loss_G_GAN+self.loss_G_L1, self.loss_lz
 

@@ -11,7 +11,7 @@ import torchvision.transforms as transforms
 import torch.nn.functional as F
 
 
-def colorize(data, labels, p, d=1):
+def colorize(data, labels, p, d=1, output_type='tensor'):
   # output shape: (num_of_images, 3, len1, len2)
   if d == 1:   # if data is of shape (num_of_images, 1, len1, len2)
       #trans_1to3d = transforms.Lambda(lambda x: x.repeat(1, 3, 1, 1))
@@ -35,11 +35,12 @@ def colorize(data, labels, p, d=1):
       new_data[i,0,:,:] = data[i,:,:]; new_data[i,2,:,:] = data[i,:,:]
     else:
       new_data[i,0,:,:] = data[i,:,:]; new_data[i,1,:,:] = data[i,:,:]
-  new_data = torch.tensor(new_data)
+  if output_type == 'tensor':
+    new_data = torch.tensor(new_data)
   return(new_data)
 
 
-def colorize_red(data, d=1):
+def colorize_red(data, d=1, output_type='tensor'):
     if d == 1:   # if data is of shape (num_of_images, 1, len1, len2)
       #trans_1to3d = transforms.Lambda(lambda x: x.repeat(1, 3, 1, 1))
       #data = trans_1to3d(data)
@@ -52,11 +53,12 @@ def colorize_red(data, d=1):
     data = data[:,0,:,:]
     for i in range(n):
         new_data[i,1,:,:] = data[i,:,:]; new_data[i,2,:,:] = data[i,:,:]
-    new_data = torch.tensor(new_data)
+    if output_type == 'tensor':
+        new_data = torch.tensor(new_data)
     return(new_data)
 
 
-def colorize_green(data, d=1):
+def colorize_green(data, d=1, output_type='tensor'):
     if d == 1:   # if data is of shape (num_of_images, 1, len1, len2)
       #trans_1to3d = transforms.Lambda(lambda x: x.repeat(1, 3, 1, 1))
       #data = trans_1to3d(data)
@@ -69,11 +71,12 @@ def colorize_green(data, d=1):
     data = data[:,0,:,:]
     for i in range(n):
         new_data[i,0,:,:] = data[i,:,:]; new_data[i,2,:,:] = data[i,:,:]
-    new_data = torch.tensor(new_data)
+    if output_type == 'tensor':
+        new_data = torch.tensor(new_data)
     return(new_data)
 
 
-def colorize_blue(data, d=1):
+def colorize_blue(data, d=1, output_type='tensor'):
     if d == 1:   # if data is of shape (num_of_images, 1, len1, len2)
       #trans_1to3d = transforms.Lambda(lambda x: x.repeat(1, 3, 1, 1))
       #data = trans_1to3d(data)
@@ -86,5 +89,6 @@ def colorize_blue(data, d=1):
     data = data[:,0,:,:]
     for i in range(n):
         new_data[i,0,:,:] = data[i,:,:]; new_data[i,1,:,:] = data[i,:,:]
-    new_data = torch.tensor(new_data)
+    if output_type == 'tensor':
+        new_data = torch.tensor(new_data)
     return(new_data)

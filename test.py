@@ -46,7 +46,7 @@ if __name__ == '__main__':
             if device == 'cuda':
                 output = model.forward().detach().cpu().numpy()
             else:
-                output = model.forward().numpy()
+                output = model.forward().detach().numpy()
             fig0 = np.swapaxes(np.swapaxes(np.squeeze(output), 0, 1), 1, 2)
             ax3.imshow(fig0)
     if opt.model_name == 'pix2pix' or 'MSGAN':
@@ -74,30 +74,30 @@ if __name__ == '__main__':
             if device == 'cuda':
                 output = model.forward().detach().cpu().numpy()
             else:
-                output = model.forward().numpy()
+                output = model.forward().detach().numpy()
             fig0 = np.swapaxes(np.swapaxes(np.squeeze(output), 0, 1), 1, 2)
             ax3.imshow(fig0)
             if device == 'cuda':
                 output = model.forward().detach().cpu().numpy()
             else:
-                output = model.forward().numpy()
+                output = model.forward().detach().numpy()
             fig0 = np.swapaxes(np.swapaxes(np.squeeze(output), 0, 1), 1, 2)
             ax4.imshow(fig0)
             if device == 'cuda':
                 output = model.forward().detach().cpu().numpy()
             else:
-                output = model.forward().numpy()
+                output = model.forward().detach().numpy()
             fig0 = np.swapaxes(np.swapaxes(np.squeeze(output), 0, 1), 1, 2)
             ax5.imshow(fig0)
             if device == 'cuda':
                 output = model.forward().detach().cpu().numpy()
             else:
-                output = model.forward().numpy()
+                output = model.forward().detach().numpy()
             fig0 = np.swapaxes(np.swapaxes(np.squeeze(output), 0, 1), 1, 2)
             ax6.imshow(fig0)
             if device == 'cuda':
                 output = model.forward().detach().cpu().numpy()
             else:
-                output = model.forward().numpy()
+                output = model.forward().detach().numpy()
             fig0 = np.swapaxes(np.swapaxes(np.squeeze(output), 0, 1), 1, 2)
             ax7.imshow(fig0)

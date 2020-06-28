@@ -21,7 +21,7 @@ class BaseOptions():
         parser.add_argument('--resize', type=str, default='False', help='whether resize data')
         parser.add_argument('--newsize', type=str, default=128, help='the new size of each side, if resize==True')
         parser.add_argument('--name', type=str, default='experiment_name', help='name of the experiment. It decides where to store samples and models')
-        parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
+        parser.add_argument('--gpu_ids', type=str, default='-1', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
         # general model parameters
         parser.add_argument('--model_name', type=str, default='unet', help='chooses which model to use. [unet | pix2pix | MSGAN | CNF]')
@@ -43,6 +43,7 @@ class BaseOptions():
         parser.add_argument('--nz', type=int, default=8, help='#latent vector')
         parser.add_argument('--nl', type=str, default='relu', help='non-linearity activation: relu | lrelu | elu')
         parser.add_argument('--lambda_GAN', type=float, default=1.0, help='weight on D loss. D(G(A, E(B)))')
+        parser.add_argument('--lambda_ms', type=float, default=1.0, help='weight on mode seeking loss')
         # dataset parameters
         parser.add_argument('--batch_size', type=int, default=16, help='input batch size')
         parser.add_argument('--num_threads', default=4, type=int, help='# threads for loading data')
