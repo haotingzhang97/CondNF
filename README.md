@@ -5,6 +5,6 @@ This repository contains code for an ongoing research project on conditional gen
 
 The implementation of MSGAN is modified from its original authors:
 
-- rMode Seeking Generative Adversarial Networks for Diverse Image Synthesis.<br>
+- Mode Seeking Generative Adversarial Networks for Diverse Image Synthesis.<br>
 [Qi Mao](https://sites.google.com/view/qi-mao/)\*, [Hsin-Ying Lee](http://vllab.ucmerced.edu/hylee/)\*, [Hung-Yu Tseng](https://sites.google.com/site/hytseng0509/)\*, [Siwei Ma](https://scholar.google.com/citations?user=y3YqlaUAAAAJ&hl=zh-CN), and [Ming-Hsuan Yang](http://faculty.ucmerced.edu/mhyang/). In CVPR, 2019 (* equal contribution)<br>
 [[arxiv]](https://arxiv.org/abs/1903.05628)
