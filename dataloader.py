@@ -20,6 +20,13 @@ def load_data(opt):
         test_set = dset.MNIST(root=root, train=False, transform=trans, download=True)
         train_set.data = 1.0 - train_set.data / 255.0
         test_set.data = 1.0 - test_set.data / 255.0
+        # comment or uncomment the next 6 lines (or previous 2 lines) depending on version of torchvision
+        #train_set.data = 1.0 - train_set.train_data / 255.0
+        #test_set.data = 1.0 - test_set.test_data / 255.0
+        #del train_set.train_data
+        #del train_set.test_data
+        #train_set.targets = train_set.train_labels
+        #test_set.targets = test_set.test_labels
         N = len(train_set.targets)
         K = np.floor(N*opt.subset).astype(int)
         # Randomly select a subset of training data (optional)

@@ -1,6 +1,7 @@
 from models.unet_model import Unet
 from models.pix2pix_model import Pix2PixModel
 from models.msgan_model import MSGAN
+from models.cglow_model import *
 
 def create_model(opt):
     """Create a model given the option.
@@ -16,6 +17,8 @@ def create_model(opt):
         return Pix2PixModel(opt)
     elif opt.model_name == 'MSGAN':
         return MSGAN(opt)
+    elif opt.model_name == 'cglow':
+        return CondGlowModel(opt)
     else:
         print("No model with the defined name")
         raise

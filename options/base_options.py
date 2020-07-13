@@ -39,11 +39,28 @@ class BaseOptions():
         parser.add_argument('--init_gain', type=float, default=0.02, help='scaling factor for normal, xavier and orthogonal.')
         parser.add_argument('--no_dropout', action='store_true', help='no dropout for the generator')
         parser.add_argument('--lambda_L1', type=float, default=100.0, help='weight for L1 loss')
-        # extra parameter for mode seeking pix2pix
+        # extra parameters for mode seeking pix2pix
         parser.add_argument('--nz', type=int, default=8, help='#latent vector')
         parser.add_argument('--nl', type=str, default='relu', help='non-linearity activation: relu | lrelu | elu')
         parser.add_argument('--lambda_GAN', type=float, default=1.0, help='weight on D loss. D(G(A, E(B)))')
         parser.add_argument('--lambda_ms', type=float, default=1.0, help='weight on mode seeking loss')
+        # model parameters for cGlow
+        parser.add_argument("--x_size", type=tuple, default=(3, 64, 64))
+        parser.add_argument("--y_size", type=tuple, default=(3, 64, 64))
+        parser.add_argument("--x_hidden_channels", type=int, default=128)
+        parser.add_argument("--x_hidden_size", type=int, default=64)
+        parser.add_argument("--y_hidden_channels", type=int, default=256)
+        parser.add_argument("-K", "--flow_depth", type=int, default=8)
+        parser.add_argument("-L", "--num_levels", type=int, default=3)
+        parser.add_argument("--learn_top", type=bool, default=False)
+        parser.add_argument("--max_grad_clip", type=float, default=5)
+        parser.add_argument("--max_grad_norm", type=float, default=0)
+        # Dataset preprocess parameters for cGlow
+        parser.add_argument("--label_scale", type=float, default=1)
+        parser.add_argument("--label_bias", type=float, default=0.5)
+        parser.add_argument("--x_bins", type=float, default=256.0)
+        parser.add_argument("--y_bins", type=float, default=2.0)
+
         # dataset parameters
         parser.add_argument('--batch_size', type=int, default=16, help='input batch size')
         parser.add_argument('--num_threads', default=4, type=int, help='# threads for loading data')
