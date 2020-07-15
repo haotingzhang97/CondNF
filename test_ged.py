@@ -21,26 +21,26 @@ for i in range(10):
 opt.p = p
 _, _, test_data, test_targets, _ = load_data(opt)  # create a dataset given opt.dataset_mode and other options
 
-
+'''
 opt.model_name = 'unet'
 model = create_model(opt)
 model.load_state_dict(torch.load('/Users/Haoting/Desktop/MSc_code/savedmodels/unet_model2_mae2.pt',map_location=torch.device('cpu')))
 opt.gpu_ids = -1
-ged = ged_mnist(test_data, test_targets, p, model, opt, 100, 10)
+ged = ged_mnist(test_data, test_targets, p, model, opt, 10, 10, 'mssim')
 print(ged)
 print(np.mean(ged))
 '''
 model = torch.load('/Users/Haoting/Desktop/MSc_code/savedmodels/model_pix2pix01.pt', map_location=torch.device('cpu'))
 opt.model_name = 'pix2pix'
 opt.gpu_ids = -1
-ged = ged_mnist(test_data, test_targets, p, model, opt, 100, 10)
+ged = ged_mnist(test_data, test_targets, p, model, opt, 10, 10, 'mssim')
 print(ged)
 print(np.mean(ged))
-
+'''
 model = torch.load('/Users/Haoting/Desktop/MSc_code/savedmodels/model_msgan07.pt', map_location=torch.device('cpu'))
 opt.model_name = 'MSGAN'
 opt.gpu_ids = -1
-ged = ged_mnist(test_data, test_targets, p, model, opt, 100, 10)
+ged = ged_mnist(test_data, test_targets, p, model, opt, 10, 10, 'mssim')
 print(ged)
 print(np.mean(ged))
 '''

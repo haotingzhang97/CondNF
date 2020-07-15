@@ -24,7 +24,7 @@ def load_data(opt):
         #train_set.data = 1.0 - train_set.train_data / 255.0
         #test_set.data = 1.0 - test_set.test_data / 255.0
         #del train_set.train_data
-        #del train_set.test_data
+        #del test_set.test_data
         #train_set.targets = train_set.train_labels
         #test_set.targets = test_set.test_labels
         N = len(train_set.targets)
@@ -68,7 +68,8 @@ def preprocess(x, scale, bias, bins, noise=False):
         if bins == 2:
             x = x + torch.zeros_like(x).uniform_(-0.5, 0.5)
         else:
-            x = x + torch.zeros_like(x).uniform_(0, 1/bins)
+            #x = x + torch.zeros_like(x).uniform_(0, 1/bins)
+            x = x + torch.zeros_like(x).uniform_(-1 / bins, 1 / bins)
     return x
 
 

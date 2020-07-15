@@ -49,7 +49,8 @@ if __name__ == '__main__':
         model = model.to(device)
         optim = torch.optim.Adam(model.parameters(), lr=opt.lr)
         train_data = preprocess(train_data, 1.0, 0.0, opt.x_bins, True)
-        train_set_colorized = preprocess(train_set_colorized, opt.label_scale, opt.label_bias, opt.y_bins, True)
+        train_set_colorized = preprocess(train_set_colorized, 1.0, 0.0, opt.x_bins, True)
+        #train_set_colorized = preprocess(train_set_colorized, opt.label_scale, opt.label_bias, opt.y_bins, True)
     else:
         print('Wrong model name')
     total_iters = 0  # the total number of training iterations

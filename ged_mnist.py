@@ -1,11 +1,22 @@
 from colorization import *
+from skimage.metrics import structural_similarity as ssim
+#from pytorch_msssim import ssim, ms_ssim, SSIM, MS_SSIM
 
 
-def np_L1loss(x,y):
+def np_L1loss(x, y):
     return np.mean(np.absolute(np.array(x)-np.array(y)))
 
+def ssim_batch(x, y):
+    ssim_val = 0
+    n = np.shape(x)[0]
+    for i in range(n):
+        xx = np.swapaxes(np.swapaxes(x[i, :, :, :], 0, 1), 1, 2)
+        yy = np.swapaxes(np.swapaxes(y[i, :, :, :], 0, 1), 1, 2)
+        ssim_val += ssim(xx, yy, multichannel=True)
+    ssim_val /= n
+    return ssim_val
 
-def ged_mnist(data_x, target_x, p, model, opt, n_samples=100, n_each_digit=10):
+def ged_mnist(data_x, target_x, p, model, opt, n_samples=100, n_each_digit=1, loss='L1'):
     # Generalised Energy Distance:
     # D^2_{GED}(P_{gt}, P_{out}) = 2E[d(S,Y)] - E[d(S,S')] - E[d(Y,Y')]
     # S,S' -- independent samples from the predicted distribution P_{out}
@@ -20,9 +31,14 @@ def ged_mnist(data_x, target_x, p, model, opt, n_samples=100, n_each_digit=10):
         data_gt_red = colorize_red(data_x[i,:,:,:], d=1, output_type='np')
         data_gt_green = colorize_green(data_x[i,:,:,:], d=1, output_type='np')
         data_gt_blue = colorize_blue(data_x[i,:,:,:], d=1, output_type='np')
-        dYY = 2 * p[digit, 0] * p[digit, 1] * np_L1loss(data_gt_red, data_gt_green) + \
-        2 * p[digit, 0] * p[digit, 2] * np_L1loss(data_gt_red, data_gt_blue) + \
-        2 * p[digit, 1] * p[digit, 2] * np_L1loss(data_gt_green, data_gt_blue)
+        if loss == 'L1':
+            dYY = 2 * p[digit, 0] * p[digit, 1] * np_L1loss(data_gt_red, data_gt_green) + \
+            2 * p[digit, 0] * p[digit, 2] * np_L1loss(data_gt_red, data_gt_blue) + \
+            2 * p[digit, 1] * p[digit, 2] * np_L1loss(data_gt_green, data_gt_blue)
+        if loss == 'mssim':
+            dYY = 2 * p[digit, 0] * p[digit, 1] * (1-ssim_batch(data_gt_red, data_gt_green)) + \
+            2 * p[digit, 0] * p[digit, 2] * (1-ssim_batch(data_gt_red, data_gt_blue)) + \
+            2 * p[digit, 1] * p[digit, 2] * (1-ssim_batch(data_gt_green, data_gt_blue))
         dSY = 0
         dSS = 0
         if opt.model_name == 'unet':
@@ -33,8 +49,13 @@ def ged_mnist(data_x, target_x, p, model, opt, n_samples=100, n_each_digit=10):
                 output = model.forward().detach().cpu().numpy()
             else:
                 output = model.forward().detach().numpy()
-            dSY = p[digit, 0] * np_L1loss(data_gt_red, output) + p[digit, 1] * np_L1loss(data_gt_green, output) + \
-                p[digit, 2] * np_L1loss(data_gt_blue, output)
+            if loss == 'L1':
+                dSY = p[digit, 0] * np_L1loss(data_gt_red, output) + p[digit, 1] * np_L1loss(data_gt_green, output) + \
+                    p[digit, 2] * np_L1loss(data_gt_blue, output)
+            if loss == 'mssim':
+                dSY = p[digit, 0] * (1-ssim_batch(data_gt_red, output)) + \
+                    p[digit, 1] * (1-ssim_batch(data_gt_green, output)) + \
+                    p[digit, 2] * (1-ssim_batch(data_gt_blue, output))
         if opt.model_name == 'pix2pix':
             output_mat = np.zeros((n_samples, n_each_digit, 3, dim_x, dim_x))
             for k in range(n_samples):
@@ -46,13 +67,21 @@ def ged_mnist(data_x, target_x, p, model, opt, n_samples=100, n_each_digit=10):
                 else:
                     output = model.forward().detach().numpy()
                 output_mat[k,:,:,:,:] = output
-                dSY += p[digit, 0] * np_L1loss(data_gt_red, output) + p[digit, 1] * np_L1loss(data_gt_green, output) + \
-                      p[digit, 2] * np_L1loss(data_gt_blue, output)
+                if loss == 'L1':
+                    dSY += p[digit, 0] * np_L1loss(data_gt_red, output) + p[digit, 1] * \
+                          np_L1loss(data_gt_green, output) + p[digit, 2] * np_L1loss(data_gt_blue, output)
+                if loss == 'mssim':
+                    dSY += p[digit, 0] * (1-ssim_batch(data_gt_red, output)) + \
+                          p[digit, 1] * (1-ssim_batch(data_gt_green, output)) + \
+                          p[digit, 2] * (1-ssim_batch(data_gt_blue, output))
             dSY /= n_samples
             for k1 in range(n_samples):
                 for k2 in range(n_samples):
-                    dSS += np.mean(np.absolute(output_mat[k1, :, :, :, :] - output_mat[k2, :, :, :, :]))
-                    #dSS += np_L1loss(output_mat[k1, :, :, :, :], output[k2, :, :, :, :])
+                    if loss == 'L1':
+                        dSS += np.mean(np.absolute(output_mat[k1, :, :, :, :] - output_mat[k2, :, :, :, :]))
+                        #dSS += np_L1loss(output_mat[k1, :, :, :, :], output[k2, :, :, :, :])
+                    if loss == 'mssim':
+                        dSS += 1 - ssim_batch(output_mat[k1, :, :, :, :], output_mat[k2, :, :, :, :])
             dSS /= (n_samples * n_samples)
 
         if opt.model_name == 'MSGAN':
@@ -70,13 +99,24 @@ def ged_mnist(data_x, target_x, p, model, opt, n_samples=100, n_each_digit=10):
                     else:
                         fake_B = fake_B.detach().numpy()
                     output_mat[k,:,:,:,:] = fake_B
-                    dSY += p[digit, 0] * np_L1loss(data_gt_red, fake_B) + p[digit, 1] * np_L1loss(data_gt_green, fake_B) + \
-                           p[digit, 2] * np_L1loss(data_gt_blue, fake_B)
+                    data_gt_red_k = np.expand_dims(data_gt_red[k, :, :, :], 0)
+                    data_gt_green_k = np.expand_dims(data_gt_green[k, :, :, :], 0)
+                    data_gt_blue_k = np.expand_dims(data_gt_blue[k, :, :, :], 0)
+                    if loss == 'L1':
+                        dSY += p[digit, 0] * np_L1loss(data_gt_red_k, fake_B) + p[digit, 1] * np_L1loss(data_gt_green_k, fake_B) + \
+                               p[digit, 2] * np_L1loss(data_gt_blue_k, fake_B)
+                    if loss == 'mssim':
+                        dSY += p[digit, 0] * (1-ssim_batch(data_gt_red_k, fake_B)) + p[digit, 1] * \
+                               (1-ssim_batch(data_gt_green_k, fake_B)) + p[digit, 2] * \
+                               (1-ssim_batch(data_gt_blue_k, fake_B))
             dSY /= (n_samples*n_each_digit)
             for k1 in range(n_samples):
                 for k2 in range(n_samples):
-                    dSS += np.mean(np.absolute(output_mat[k1, :, :, :, :] - output_mat[k2, :, :, :, :]))
-                    #dSS += np_L1loss(output_mat[i, :, :, :, :], output[j, :, :, :, :])
+                    if loss == 'L1':
+                        dSS += np.mean(np.absolute(output_mat[k1, :, :, :, :] - output_mat[k2, :, :, :, :]))
+                        #dSS += np_L1loss(output_mat[i, :, :, :, :], output[j, :, :, :, :])
+                    if loss == 'mssim':
+                        dSS += 1 - ssim_batch(output_mat[k1, :, :, :, :], output_mat[k2, :, :, :, :])
             dSS /= (n_samples * n_samples)
         ged[digit] = np.sqrt(2 * dSY - dSS - dYY)
         print(dSY, dSS, dYY)
