@@ -21,9 +21,6 @@ opt = TrainOptions().parse()   # get training options
 opt.model_name = 'cglow'
 opt.subset = 0.001
 opt.batch_size = 4
-opt.resize = True
-opt.newsize = 64
-opt.x_size = (1, 64, 64)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 p = np.zeros((10, 3))
 for i in range(10):

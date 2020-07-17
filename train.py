@@ -28,8 +28,8 @@ if __name__ == '__main__':
     opt.p = p
     # create a dataset given opt.dataset_mode and other options
     train_data, train_targets, _, _, train_set_colorized = load_data(opt)
-    if opt.model_name == 'cglow':
-        train_data = torch.repeat_interleave(train_data, 3, dim=1)
+    #if opt.model_name == 'cglow':
+    #    train_data = torch.repeat_interleave(train_data, 3, dim=1)
     dataset_size = len(train_targets)  # get the number of images in the dataset.
     print('The number of training images = %d' % dataset_size)
 
@@ -45,7 +45,7 @@ if __name__ == '__main__':
         model.netD = model.netD.to(device)
         model.netG = model.netG.to(device)
         model.criterionGAN = model.criterionGAN.to(device)
-    elif opt.model_name == 'cglow':
+    elif opt.model_name == 'cglow' or opt.model_name == 'GDPP-cglow':
         model = model.to(device)
         optim = torch.optim.Adam(model.parameters(), lr=opt.lr)
         train_data = preprocess(train_data, 1.0, 0.0, opt.x_bins, True)
@@ -88,6 +88,22 @@ if __name__ == '__main__':
                 if opt.max_grad_norm > 0:
                     torch.nn.utils.clip_grad_norm_(model.parameters(), opt.max_grad_norm)
                 optim.step()
+            '''
+            if opt.model_name == 'GDPP-cglow':
+                x = data[0].float()
+                y = data[1].float()
+                z, nll = model.forward(x, y)
+                loss = torch.mean(nll)
+                ? = model.forward(x, reverse=True)
+                model.zero_grad()
+                optim.zero_grad()
+                loss.backward()
+                if opt.max_grad_clip > 0:
+                    torch.nn.utils.clip_grad_value_(model.parameters(), opt.max_grad_clip)
+                if opt.max_grad_norm > 0:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), opt.max_grad_norm)
+                optim.step()
+        '''
 
         if opt.model_name == 'unet':
             if device == 'cuda':

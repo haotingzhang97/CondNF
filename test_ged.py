@@ -4,7 +4,7 @@ import torch
 import torch.utils.data as Data
 from colorization import *
 from options.test_options import TestOptions
-from dataloader import load_data
+from data import *
 from ged_mnist import *
 from models.unet_model import *
 from models import create_model
@@ -19,6 +19,7 @@ for i in range(10):
     p[i, 1] = 0.1
     p[i, 2] = 1 - p[i, 0] - p[i, 1]
 opt.p = p
+opt.newsize = 64
 _, _, test_data, test_targets, _ = load_data(opt)  # create a dataset given opt.dataset_mode and other options
 
 '''
@@ -29,18 +30,24 @@ opt.gpu_ids = -1
 ged = ged_mnist(test_data, test_targets, p, model, opt, 10, 10, 'mssim')
 print(ged)
 print(np.mean(ged))
-'''
+
 model = torch.load('/Users/Haoting/Desktop/MSc_code/savedmodels/model_pix2pix01.pt', map_location=torch.device('cpu'))
 opt.model_name = 'pix2pix'
 opt.gpu_ids = -1
 ged = ged_mnist(test_data, test_targets, p, model, opt, 10, 10, 'mssim')
 print(ged)
 print(np.mean(ged))
-'''
+
 model = torch.load('/Users/Haoting/Desktop/MSc_code/savedmodels/model_msgan07.pt', map_location=torch.device('cpu'))
 opt.model_name = 'MSGAN'
+opt.gpu_ids = -1
+ged = ged_mnist(test_data, test_targets, p, model, opt, 10, 10, 'L1')
+print(ged)
+print(np.mean(ged))
+'''
+model = torch.load('/Users/Haoting/Desktop/MSc_code/savedmodels/model_cglow07.pt', map_location=torch.device('cpu'))
+opt.model_name = 'cglow'
 opt.gpu_ids = -1
 ged = ged_mnist(test_data, test_targets, p, model, opt, 10, 10, 'mssim')
 print(ged)
 print(np.mean(ged))
-'''

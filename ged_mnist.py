@@ -56,16 +56,23 @@ def ged_mnist(data_x, target_x, p, model, opt, n_samples=100, n_each_digit=1, lo
                 dSY = p[digit, 0] * (1-ssim_batch(data_gt_red, output)) + \
                     p[digit, 1] * (1-ssim_batch(data_gt_green, output)) + \
                     p[digit, 2] * (1-ssim_batch(data_gt_blue, output))
-        if opt.model_name == 'pix2pix':
+        if opt.model_name == 'pix2pix' or opt.model_name == 'cglow':
             output_mat = np.zeros((n_samples, n_each_digit, 3, dim_x, dim_x))
             for k in range(n_samples):
                 input = data_x[i, :, :, :].to(device).float()
                 model.isTrain = False
-                model.set_input(input)
-                if device == 'cuda':
-                    output = model.forward().detach().cpu().numpy()
+                if opt.model_name == 'pix2pix':
+                    model.set_input(input)
+                    if device == 'cuda':
+                        output = model.forward().detach().cpu().numpy()
+                    else:
+                        output = model.forward().detach().numpy()
                 else:
-                    output = model.forward().detach().numpy()
+                    output, _ = model(input, reverse=True)
+                    if device == 'cuda':
+                        output = output.detach().cpu().numpy()
+                    else:
+                        output = output.detach().numpy()
                 output_mat[k,:,:,:,:] = output
                 if loss == 'L1':
                     dSY += p[digit, 0] * np_L1loss(data_gt_red, output) + p[digit, 1] * \
