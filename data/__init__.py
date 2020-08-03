@@ -108,7 +108,7 @@ def load_data_seg(opt):
             test_set.data = test_set_resized
             del train_set_resized, test_set_resized
         train_set_colorized = colorize(train_set.data, train_set.targets, opt.p, 1)
-        train_set_seg = torch.tensor(np.zeros((int(K), 1, opt.newsize, opt.newsize)))
+        train_set_seg = torch.tensor(np.zeros((int(K), 4, opt.newsize, opt.newsize)))
         for i in range(int(K)):
             train_set_colorized_i = np.squeeze(train_set_colorized[i, :, :, :].detach().numpy())
             rmat = train_set_colorized_i[0, :, :]
@@ -117,13 +117,13 @@ def load_data_seg(opt):
             for k1 in range(opt.newsize):
                 for k2 in range(opt.newsize):
                     if gmat[k1, k2] < 0.9 and bmat[k1, k2] < 0.9:
-                        train_set_seg[i, 0, k1, k2] = 1
+                        train_set_seg[i, 1, k1, k2] = 1
                     elif rmat[k1, k2] < 0.9 and bmat[k1, k2] < 0.9:
-                        train_set_seg[i, 0, k1, k2] = 2
+                        train_set_seg[i, 2, k1, k2] = 1
                     elif rmat[k1, k2] < 0.9 and gmat[k1, k2] < 0.9:
-                        train_set_seg[i, 0, k1, k2] = 3
+                        train_set_seg[i, 3, k1, k2] = 1
                     else:
-                        train_set_seg[i, 0, k1, k2] = 0
+                        train_set_seg[i, 0, k1, k2] = 1
         return train_set.data, train_set.targets, test_set.data, test_set.targets, train_set_colorized, train_set_seg
 
 

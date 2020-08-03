@@ -29,17 +29,18 @@ for i in range(10):
     p[i, 2] = 1 - p[i, 0] - p[i, 1]
 opt.p = p
 
-if opt.model_name == 'cglow':
-    opt.x_size = (opt.input_nc, opt.newsize, opt.newsize)
-    opt.y_size = (opt.output_nc, opt.newsize, opt.newsize)
 
 opt.sample_method = 0
 opt.seg = 1
-opt.output_nc = 1
+opt.output_nc = 4
 opt.pretrain = 0
 opt.pretrained_model_name = '/Users/Haoting/Desktop/MSc_code/savedmodels/model_cglow002.pt'
 opt.n_epochs = 5
 opt.n_epochs_decay = 5
+
+if opt.model_name == 'cglow':
+    opt.x_size = (opt.input_nc, opt.newsize, opt.newsize)
+    opt.y_size = (opt.output_nc, opt.newsize, opt.newsize)
 
 if opt.sample_method == 0:
     # create a dataset given opt.dataset_mode and other options
@@ -71,13 +72,7 @@ if opt.sample_method == 0:
             shuffle=True,
             num_workers=int(opt.num_threads))
 
-    if opt.pretrain == 0:
-        model = create_model(opt)
-    else:
-        if device == 'cuda':
-            model = torch.load(opt.pretrained_model_name)
-        else:
-            model = torch.load(opt.pretrained_model_name, map_location=torch.device('cpu'))
+    model = create_model(opt)
     if opt.model_name == 'unet':
         model = model.to(device)  # create a model given opt.model and other options
     elif opt.model_name == 'pix2pix' or opt.model_name == 'MSGAN':
