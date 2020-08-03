@@ -25,9 +25,11 @@ class BaseOptions():
         parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
         # general model parameters
         parser.add_argument('--model_name', type=str, default='unet', help='chooses which model to use. [unet | pix2pix | MSGAN | CNF]')
-        # model parameters for unet and pix2pix
+        parser.add_argument('--seg', type=int, default=1, help='whether treat as a segmentation problem (1) or not (0)')
+        # model parameters for all models
         parser.add_argument('--input_nc', type=int, default=1, help='# of input image channels: 3 for RGB and 1 for grayscale')
         parser.add_argument('--output_nc', type=int, default=3, help='# of output image channels: 3 for RGB and 1 for grayscale')
+        # model parameters for unet and pix2pix
         parser.add_argument('--num_downs', type=int, default=3, help='# of downsamplings in Unet')
         parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in the last conv layer')
         parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in the first conv layer')
@@ -45,8 +47,8 @@ class BaseOptions():
         parser.add_argument('--lambda_GAN', type=float, default=1.0, help='weight on D loss. D(G(A, E(B)))')
         parser.add_argument('--lambda_ms', type=float, default=1.0, help='weight on mode seeking loss')
         # model parameters for cGlow
-        parser.add_argument("--x_size", type=tuple, default=(1, 32, 32))
-        parser.add_argument("--y_size", type=tuple, default=(3, 32, 32))
+        #parser.add_argument("--x_size", type=tuple, default=(1, 32, 32))
+        #parser.add_argument("--y_size", type=tuple, default=(1, 32, 32))
         parser.add_argument("--x_hidden_channels", type=int, default=128)
         parser.add_argument("--x_hidden_size", type=int, default=32)
         parser.add_argument("--y_hidden_channels", type=int, default=256)

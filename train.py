@@ -27,20 +27,44 @@ if __name__ == '__main__':
         p[i, 2] = 1 - p[i, 0] - p[i, 1]
     opt.p = p
 
+    if opt.model_name == 'cglow':
+        opt.x_size = (opt.input_nc, opt.newsize, opt.newsize)
+        opt.y_size = (opt.output_nc, opt.newsize, opt.newsize)
+
     if opt.sample_method == 0:
         # create a dataset given opt.dataset_mode and other options
-        train_data, train_targets, _, _, train_set_colorized = load_data(opt)
-        #if opt.model_name == 'cglow':
-        #    train_data = torch.repeat_interleave(train_data, 3, dim=1)
-        dataset_size = len(train_targets)  # get the number of images in the dataset.
-        print('The number of training images = %d' % dataset_size)
+        if opt.seg == 1:
+            train_data, train_targets, _, _, _, train_set_seg = load_data_seg(opt)
+            dataset_size = len(train_targets)  # get the number of images in the dataset.
+            print('The number of training images = %d' % dataset_size)
+            if opt.model_name == 'cglow':
+                train_data = preprocess(train_data, 1.0, 0.0, opt.x_bins, True)
+                train_set_seg = preprocess(train_set_seg, 1.0, 0.0, opt.x_bins, True)
+            dataset = Data.DataLoader(
+                Data.TensorDataset(train_data, train_set_seg),
+                batch_size=opt.batch_size,
+                shuffle=True,
+                num_workers=int(opt.num_threads))
+        else:
+            train_data, train_targets, _, _, train_set_colorized = load_data(opt)
+            #if opt.model_name == 'cglow':
+            #    train_data = torch.repeat_interleave(train_data, 3, dim=1)
+            dataset_size = len(train_targets)  # get the number of images in the dataset.
+            if opt.model_name == 'cglow':
+                train_data = preprocess(train_data, 1.0, 0.0, opt.x_bins, True)
+                train_set_colorized = preprocess(train_set_colorized, 1.0, 0.0, opt.x_bins, True)
+                #train_set_colorized = preprocess(train_set_colorized, opt.label_scale, opt.label_bias, opt.y_bins, True)
+            print('The number of training images = %d' % dataset_size)
+            dataset = Data.DataLoader(
+                Data.TensorDataset(train_data, train_set_colorized),
+                batch_size=opt.batch_size,
+                shuffle=True,
+                num_workers=int(opt.num_threads))
 
-        dataset = Data.DataLoader(
-            Data.TensorDataset(train_data, train_set_colorized),
-            batch_size=opt.batch_size,
-            shuffle=True,
-            num_workers=int(opt.num_threads))
-        model = create_model(opt)
+        if opt.pretrain == 0:
+            model = create_model(opt)
+        else:
+            model = opt.pretrained_model_name
         if opt.model_name == 'unet':
             model = model.to(device)  # create a model given opt.model and other options
         elif opt.model_name == 'pix2pix' or opt.model_name == 'MSGAN':
@@ -50,9 +74,6 @@ if __name__ == '__main__':
         elif opt.model_name == 'cglow':
             model = model.to(device)
             optim = torch.optim.Adam(model.parameters(), lr=opt.lr)
-            train_data = preprocess(train_data, 1.0, 0.0, opt.x_bins, True)
-            train_set_colorized = preprocess(train_set_colorized, 1.0, 0.0, opt.x_bins, True)
-            #train_set_colorized = preprocess(train_set_colorized, opt.label_scale, opt.label_bias, opt.y_bins, True)
         else:
             print('Wrong model name')
         total_iters = 0  # the total number of training iterations

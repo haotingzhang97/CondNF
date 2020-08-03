@@ -10,6 +10,8 @@ class TrainOptions(BaseOptions):
         parser = BaseOptions.initialize(self, parser)
         # network saving and loading parameters
         parser.add_argument('--save_model_name', type=str, default='empty_path', help='path to save the trained model')
+        parser.add_argument('--pretrain', type=int, default=0, help='pretrain (1) or not (0)')
+        parser.add_argument('--pretrained_model_name', type=str, default='empty_path', help='path to load the pretrained model')
         # training parameters
         parser.add_argument('--sample_method', type=int, default=0, help='fixed data (0) or sampled each iteration (1)')
         parser.add_argument('--n_epochs', type=int, default=100, help='number of epochs with the initial learning rate')
