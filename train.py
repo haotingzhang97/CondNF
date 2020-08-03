@@ -64,7 +64,10 @@ if __name__ == '__main__':
         if opt.pretrain == 0:
             model = create_model(opt)
         else:
-            model = opt.pretrained_model_name
+            if device == 'cuda':
+                model = torch.load(opt.pretrained_model_name)
+            else:
+                model = torch.load(opt.pretrained_model_name, map_location=torch.device('cpu'))
         if opt.model_name == 'unet':
             model = model.to(device)  # create a model given opt.model and other options
         elif opt.model_name == 'pix2pix' or opt.model_name == 'MSGAN':
