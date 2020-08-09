@@ -60,8 +60,8 @@ class BaseOptions():
         # Dataset preprocess parameters for cGlow
         parser.add_argument("--label_scale", type=float, default=1)
         parser.add_argument("--label_bias", type=float, default=0.5)
-        parser.add_argument("--x_bins", type=float, default=256.0)
-        parser.add_argument("--y_bins", type=float, default=2.0)
+        parser.add_argument("--x_bins", type=float, default=1.0/256.0)
+        parser.add_argument("--y_bins", type=float, default=0.1)
 
         # dataset parameters
         parser.add_argument('--batch_size', type=int, default=16, help='input batch size')

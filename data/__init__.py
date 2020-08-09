@@ -133,11 +133,7 @@ def preprocess(x, scale, bias, bins, noise=False):
     x = x - bias
 
     if noise == True:
-        if bins == 2:
-            x = x + torch.zeros_like(x).uniform_(-0.5, 0.5)
-        else:
-            #x = x + torch.zeros_like(x).uniform_(0, 1/bins)
-            x = x + torch.zeros_like(x).uniform_(-1 / bins, 1 / bins)
+        x = x + torch.zeros_like(x).uniform_(-0.5 * bins, 0.5 * bins)
     return x
 
 

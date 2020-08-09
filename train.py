@@ -39,7 +39,7 @@ if __name__ == '__main__':
             print('The number of training images = %d' % dataset_size)
             if opt.model_name == 'cglow':
                 train_data = preprocess(train_data, 1.0, 0.0, opt.x_bins, True)
-                train_set_seg = preprocess(train_set_seg, 1.0, 0.0, opt.x_bins, True)
+                train_set_seg = preprocess(train_set_seg, 1.0, 0.0, opt.y_bins, True)
             dataset = Data.DataLoader(
                 Data.TensorDataset(train_data, train_set_seg),
                 batch_size=opt.batch_size,
