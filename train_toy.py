@@ -35,13 +35,42 @@ if __name__ == '__main__':
         # create a dataset given opt.dataset_mode and other options
         if opt.seg == 1:
             train_data, train_targets, _, _, _, train_set_seg = load_data_seg(opt)
+
+            full_size = len(train_targets)
+            indices = list(range(full_size))
+            split = int(np.floor(opt.val_proportion * full_size))
+            np.random.shuffle(indices)
+            train_indices, val_indices = indices[split:], indices[:split]
+            val_data = train_data[val_indices, :, :, :]
+            val_targets = train_targets[val_indices]
+            val_set_seg = train_set_seg[val_indices, :, :, :]
+            train_data = train_data[train_indices, :, :, :]
+            train_targets = train_targets[train_indices]
+            train_set_seg = train_set_seg[train_indices, :, :, :]
+
+            val_dataset = Data.DataLoader(
+                Data.TensorDataset(val_data, val_set_seg),
+                batch_size=opt.batch_size,
+                shuffle=True,
+                num_workers=int(opt.num_threads))
+            valset_size = len(val_indices)
+
             ind = np.union1d(np.where(train_targets.detach().cpu().numpy() == 0)[0],
                              np.where(train_targets.detach().cpu().numpy() == 8)[0])
             train_data0 = train_data[ind]
             train_targets0 = train_data[ind]
             train_set_seg0 = train_set_seg[ind]
             dataset_size = len(train_targets0)  # get the number of images in the dataset.
+
+            ind = np.union1d(np.where(val_targets.detach().cpu().numpy() == 0)[0],
+                             np.where(val_targets.detach().cpu().numpy() == 8)[0])
+            val_data0 = val_data[ind]
+            val_targets0 = val_data[ind]
+            val_set_seg0 = val_set_seg[ind]
+            valset_size = len(val_targets0)  # get the number of images in the dataset.
+
             print('The number of training images = %d' % dataset_size)
+            print('The number of validation images = %d' % valset_size)
         else:
             train_data, train_targets, _, _, train_set_colorized = load_data(opt)
             #if opt.model_name == 'cglow':
@@ -124,6 +153,16 @@ if __name__ == '__main__':
                         torch.nn.utils.clip_grad_norm_(model.parameters(), opt.max_grad_norm)
                     optim.step()
 
+            val_loss = 0
+            for i, data in enumerate(val_dataset):
+                if opt.model_name == 'cglow':
+                    x = data[0].float()
+                    y = data[1].float()
+                    z, nll = model.forward(x, y)
+                    loss = torch.sum(nll)
+                    val_loss += loss.detach().cpu().numpy()
+            val_loss /= valset_size
+
             if opt.model_name == 'unet':
                 if device == 'cuda':
                     print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss_print.detach().cpu().numpy()))
@@ -148,10 +187,7 @@ if __name__ == '__main__':
                           'generator loss {}'.format(lossG_print.detach().numpy()),
                           'mode seeking loss {}'.format(losslz_print.detach().numpy()))
             if opt.model_name == 'cglow':
-                if device == 'cuda':
-                    print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss.detach().cpu().numpy()))
-                else:
-                    print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss.detach().numpy()))
+                print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss.detach().cpu().numpy()), 'val loss {}'.format(val_loss))
 
     if opt.sample_method == 1:
         model = create_model(opt)

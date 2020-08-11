@@ -35,8 +35,29 @@ if __name__ == '__main__':
         # create a dataset given opt.dataset_mode and other options
         if opt.seg == 1:
             train_data, train_targets, _, _, _, train_set_seg = load_data_seg(opt)
-            dataset_size = len(train_targets)  # get the number of images in the dataset.
+
+            full_size = len(train_targets)
+            indices = list(range(full_size))
+            split = int(np.floor(opt.val_proportion * full_size))
+            np.random.shuffle(indices)
+            train_indices, val_indices = indices[split:], indices[:split]
+            val_data = train_data[val_indices, :, :, :]
+            val_targets = train_targets[val_indices]
+            val_set_seg = train_set_seg[val_indices, :, :, :]
+            train_data = train_data[train_indices, :, :, :]
+            train_targets = train_targets[train_indices]
+            train_set_seg = train_set_seg[train_indices, :, :, :]
+
+            val_dataset = Data.DataLoader(
+                Data.TensorDataset(val_data, val_set_seg),
+                batch_size=opt.batch_size,
+                shuffle=True,
+                num_workers=int(opt.num_threads))
+            valset_size = len(val_indices)
+            dataset_size = len(train_indices)  # get the number of images in the dataset.
             print('The number of training images = %d' % dataset_size)
+            print('The number of validation images = %d' % valset_size)
+
             if opt.model_name == 'cglow':
                 train_data = preprocess(train_data, 1.0, 0.0, opt.x_bins, True)
                 train_set_seg = preprocess(train_set_seg, 1.0, 0.0, opt.y_bins, True)
@@ -82,6 +103,7 @@ if __name__ == '__main__':
         total_iters = 0  # the total number of training iterations
 
         print('Start training')
+        best_val_loss = 10000
         for epoch in range(1,
                            opt.n_epochs + opt.n_epochs_decay + 1):  # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
             epoch_iter = 0  # the number of training iterations in current epoch, reset to 0 every epoch
@@ -118,34 +140,33 @@ if __name__ == '__main__':
                         torch.nn.utils.clip_grad_norm_(model.parameters(), opt.max_grad_norm)
                     optim.step()
 
+            val_loss = 0
+            for i, data in enumerate(val_dataset):
+                if opt.model_name == 'cglow':
+                    x = data[0].float()
+                    y = data[1].float()
+                    z, nll = model.forward(x, y)
+                    loss = torch.sum(nll)
+                    val_loss += loss.detach().cpu().numpy()
+            val_loss /= valset_size
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                bestmodel = copy.deepcopy(model)
+
             if opt.model_name == 'unet':
-                if device == 'cuda':
-                    print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss_print.detach().cpu().numpy()))
-                else:
-                    print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss_print.detach().numpy()))
+                print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss_print.detach().cpu().numpy()))
             if opt.model_name == 'pix2pix':
-                if device == 'cuda':
-                    print('Epoch {} done, '.format(epoch),
+                print('Epoch {} done, '.format(epoch),
                           'discriminator loss {}'.format(lossD_print.detach().cpu().numpy()),
                           'generator loss {}'.format(lossG_print.detach().cpu().numpy()))
-                else:
-                    print('Epoch {} done, '.format(epoch), 'discriminator loss {}'.format(lossD_print.detach().numpy()),
-                          'generator loss {}'.format(lossG_print.detach().numpy()))
             if opt.model_name == 'MSGAN':
-                if device == 'cuda':
-                    print('Epoch {} done, '.format(epoch),
+                print('Epoch {} done, '.format(epoch),
                           'discriminator loss {}'.format(lossD_print.detach().cpu().numpy()),
                           'generator loss {}'.format(lossG_print.detach().cpu().numpy()),
                           'mode seeking loss {}'.format(losslz_print.detach().cpu().numpy()))
-                else:
-                    print('Epoch {} done, '.format(epoch), 'discriminator loss {}'.format(lossD_print.detach().numpy()),
-                          'generator loss {}'.format(lossG_print.detach().numpy()),
-                          'mode seeking loss {}'.format(losslz_print.detach().numpy()))
             if opt.model_name == 'cglow':
-                if device == 'cuda':
-                    print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss.detach().cpu().numpy()))
-                else:
-                    print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss.detach().numpy()))
+                print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss.detach().cpu().numpy()),
+                      'val loss {}'.format(val_loss))
 
     if opt.sample_method == 1:
         model = create_model(opt)
@@ -248,4 +269,4 @@ if __name__ == '__main__':
                     print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss.detach().numpy()))
 
     print('Training finished')
-    torch.save(model, opt.save_model_name)
+    torch.save(bestmodel, opt.save_model_name)

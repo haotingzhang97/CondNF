@@ -18,6 +18,7 @@ class BaseOptions():
         # basic parameters
         parser.add_argument('--dataset_name', type=str, default='MNIST', help='dataset name')
         parser.add_argument('--subset', type=float, default=0.1, help='the percentage of training data loaded')
+        parser.add_argument('--val_proportion', type=float, default=0.2, help='the percentage of training data used for validation')
         parser.add_argument('--resize', type=str, default=True, help='whether resize data')
         parser.add_argument('--newsize', type=int, default=32, help='the new size of each side, if resize==True')
         parser.add_argument('--name', type=str, default='experiment_name', help='name of the experiment. It decides where to store samples and models')
