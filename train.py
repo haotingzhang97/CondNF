@@ -142,12 +142,14 @@ if __name__ == '__main__':
 
             val_loss = 0
             for i, data in enumerate(val_dataset):
+                if device == 'cuda':
+                    data = [x.to(device) for x in data]
                 if opt.model_name == 'cglow':
                     x = data[0].float()
                     y = data[1].float()
                     z, nll = model.forward(x, y)
-                    loss = torch.sum(nll)
-                    val_loss += loss.detach().cpu().numpy()
+                    valloss = torch.sum(nll)
+                    val_loss += valloss.detach().cpu().numpy()
             val_loss /= valset_size
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
