@@ -50,13 +50,19 @@ if __name__ == '__main__':
                          np.where(train_targets.detach().cpu().numpy() == 8)[0])
         train_data0 = train_data[ind]
         train_targets0 = train_targets[ind]
-        train_set_seg0 = torch.ones_like(train_data0) - torch.round(train_data0)
+        train_set_seg0 = torch.zeros((len(train_targets0), 2, opt.newsize, opt.newsize))
         for i in range(len(train_targets0)):
             u = np.random.uniform(0.0, 1.0)
-            if train_targets0[i] == 0 and u > 0.8:
-                train_set_seg0[i, 0, :, :] = 2 * train_set_seg0[i, 0, :, :]
-            if train_targets0[i] == 8 and u < 0.8:
-                train_set_seg0[i, 0, :, :] = 2 * train_set_seg0[i, 0, :, :]
+            if train_targets0[i] == 0:
+                if u < 0.8:
+                    train_set_seg0[i, 0, :, :] = torch.ones_like(train_data0[i, 0, :, :]) - torch.round(train_data0[i, 0, :, :])
+                else:
+                    train_set_seg0[i, 1, :, :] = torch.ones_like(train_data0[i, 0, :, :]) - torch.round(train_data0[i, 0, :, :])
+            if train_targets0[i] == 8:
+                if u < 0.8:
+                    train_set_seg0[i, 1, :, :] = torch.ones_like(train_data0[i, 0, :, :]) - torch.round(train_data0[i, 0, :, :])
+                else:
+                    train_set_seg0[i, 0, :, :] = torch.ones_like(train_data0[i, 0, :, :]) - torch.round(train_data0[i, 0, :, :])
 
         dataset_size = len(train_targets0)  # get the number of images in the dataset.
 
@@ -64,13 +70,19 @@ if __name__ == '__main__':
                          np.where(val_targets.detach().cpu().numpy() == 8)[0])
         val_data0 = val_data[ind]
         val_targets0 = val_targets[ind]
-        val_set_seg0 = torch.ones_like(val_data0) - torch.round(val_data0)
+        val_set_seg0 = torch.zeros((len(val_targets0), 2, opt.newsize, opt.newsize))
         for i in range(len(val_targets0)):
             u = np.random.uniform(0.0, 1.0)
-            if val_targets0[i] == 0 and u > 0.8:
-                val_set_seg0[i, 0, :, :] = 2 * val_set_seg0[i, 0, :, :]
-            if val_targets0[i] == 8 and u < 0.8:
-                val_set_seg0[i, 0, :, :] = 2 * val_set_seg0[i, 0, :, :]
+            if val_targets0[i] == 0:
+                if u < 0.8:
+                    val_set_seg0[i, 0, :, :] = torch.ones_like(val_data0[i, 0, :, :]) - torch.round(val_data0[i, 0, :, :])
+                else:
+                    val_set_seg0[i, 1, :, :] = torch.ones_like(val_data0[i, 0, :, :]) - torch.round(val_data0[i, 0, :, :])
+            if val_targets0[i] == 8:
+                if u < 0.8:
+                    val_set_seg0[i, 1, :, :] = torch.ones_like(val_data0[i, 0, :, :]) - torch.round(val_data0[i, 0, :, :])
+                else:
+                    val_set_seg0[i, 0, :, :] = torch.ones_like(val_data0[i, 0, :, :]) - torch.round(val_data0[i, 0, :, :])
         valset_size = len(val_targets0)  # get the number of images in the dataset.
 
         print('The number of training images = %d' % dataset_size)
@@ -187,21 +199,41 @@ if __name__ == '__main__':
                            opt.n_epochs + opt.n_epochs_decay + 1):  # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
             epoch_iter = 0  # the number of training iterations in current epoch, reset to 0 every epoch
 
-            train_set_seg0 = torch.ones_like(train_data0) - torch.round(train_data0)
+            train_set_seg0 = torch.zeros((len(train_targets0), 2, opt.newsize, opt.newsize))
             for i in range(len(train_targets0)):
                 u = np.random.uniform(0.0, 1.0)
-                if train_targets0[i] == 0 and u > 0.8:
-                    train_set_seg0[i, 0, :, :] = 2 * train_set_seg0[i, 0, :, :]
-                if train_targets0[i] == 8 and u < 0.8:
-                    train_set_seg0[i, 0, :, :] = 2 * train_set_seg0[i, 0, :, :]
+                if train_targets0[i] == 0:
+                    if u < 0.8:
+                        train_set_seg0[i, 0, :, :] = torch.ones_like(train_data0[i, 0, :, :]) - torch.round(
+                            train_data0[i, 0, :, :])
+                    else:
+                        train_set_seg0[i, 1, :, :] = torch.ones_like(train_data0[i, 0, :, :]) - torch.round(
+                            train_data0[i, 0, :, :])
+                if train_targets0[i] == 8:
+                    if u < 0.8:
+                        train_set_seg0[i, 1, :, :] = torch.ones_like(train_data0[i, 0, :, :]) - torch.round(
+                            train_data0[i, 0, :, :])
+                    else:
+                        train_set_seg0[i, 0, :, :] = torch.ones_like(train_data0[i, 0, :, :]) - torch.round(
+                            train_data0[i, 0, :, :])
 
-            val_set_seg0 = torch.ones_like(val_data0) - torch.round(val_data0)
+            val_set_seg0 = torch.zeros((len(val_targets0), 2, opt.newsize, opt.newsize))
             for i in range(len(val_targets0)):
                 u = np.random.uniform(0.0, 1.0)
-                if val_targets0[i] == 0 and u > 0.8:
-                    val_set_seg0[i, 0, :, :] = 2 * val_set_seg0[i, 0, :, :]
-                if val_targets0[i] == 8 and u < 0.8:
-                    val_set_seg0[i, 0, :, :] = 2 * val_set_seg0[i, 0, :, :]
+                if val_targets0[i] == 0:
+                    if u < 0.8:
+                        val_set_seg0[i, 0, :, :] = torch.ones_like(val_data0[i, 0, :, :]) - torch.round(
+                            val_data0[i, 0, :, :])
+                    else:
+                        val_set_seg0[i, 1, :, :] = torch.ones_like(val_data0[i, 0, :, :]) - torch.round(
+                            val_data0[i, 0, :, :])
+                if val_targets0[i] == 8:
+                    if u < 0.8:
+                        val_set_seg0[i, 1, :, :] = torch.ones_like(val_data0[i, 0, :, :]) - torch.round(
+                            val_data0[i, 0, :, :])
+                    else:
+                        val_set_seg0[i, 0, :, :] = torch.ones_like(val_data0[i, 0, :, :]) - torch.round(
+                            val_data0[i, 0, :, :])
 
             train_data = preprocess(train_data0, 1.0, 0.0, opt.x_bins, True)
             train_set_seg = preprocess(train_set_seg0, 1.0, 0.0, opt.y_bins, True)
