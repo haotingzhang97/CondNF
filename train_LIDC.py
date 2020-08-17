@@ -25,7 +25,7 @@ if __name__ == '__main__':
         opt.y_size = (opt.output_nc, opt.newsize, opt.newsize)
 
     # create a dataset given opt.dataset_mode and other options
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     dataset = LIDC_IDRI(dataset_location='LIDCdata/')
     dataset_size = len(dataset)
     indices = list(range(dataset_size))
@@ -64,9 +64,10 @@ if __name__ == '__main__':
                        opt.n_epochs + opt.n_epochs_decay + 1):  # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
         epoch_iter = 0  # the number of training iterations in current epoch, reset to 0 every epoch
 
-        for i, data in enumerate(train_loader):  # inner loop within one epoch
-            if device == 'cuda':
-                data = [x.to(device) for x in data]
+        for i, (x, y, _) in enumerate(train_loader):  # inner loop within one epoch
+            x = x.to(device)
+            y = torch.unsqueeze(y, 1)
+            y = y.to(device)
             total_iters += opt.batch_size
             epoch_iter += opt.batch_size
             if opt.model_name != 'cglow':
@@ -83,9 +84,8 @@ if __name__ == '__main__':
                 if epoch > opt.n_epochs:
                     opt.lr *= opt.lr_decay_rate
                     optim = torch.optim.Adam(model.parameters(), lr=opt.lr)
-                x = data[0].float()
-                y = data[1].float()
-                y = torch.unsqueeze(y, 1)
+                x = x.float()
+                y = y.float()
                 y = preprocess(y, 1.0, 0.0, opt.y_bins, True)
                 z, nll = model.forward(x, y)
                 loss = torch.mean(nll)
