@@ -31,7 +31,9 @@ if __name__ == '__main__':
     indices = list(range(dataset_size))
     split = int(np.floor(0.1 * dataset_size))
     np.random.shuffle(indices)
-    train_indices, test_indices = indices[split:], indices[:split]
+    #train_indices, test_indices = indices[split:], indices[:split]
+    train_indices = np.load('/content/drive/My Drive/Colab Notebooks/CondNF_ver1/savedmodel/train_indices.npy')
+    test_indices = np.load('/content/drive/My Drive/Colab Notebooks/CondNF_ver1/savedmodel/test_indices.npy')
     train_sampler = SubsetRandomSampler(train_indices)
     test_sampler = SubsetRandomSampler(test_indices)
     train_loader = Data.DataLoader(dataset, batch_size=opt.batch_size, sampler=train_sampler)
