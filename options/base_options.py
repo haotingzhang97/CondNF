@@ -21,7 +21,7 @@ class BaseOptions():
         parser.add_argument('--val_proportion', type=float, default=0.2, help='the percentage of training data used for validation')
         parser.add_argument('--resize', type=str, default=True, help='whether resize data')
         parser.add_argument('--newsize', type=int, default=32, help='the new size of each side, if resize==True')
-        parser.add_argument('--fixed_indices', type=int, default=True, help='whether use fixed indices or randomly generate new ones')
+        parser.add_argument('--fixed_indices', type=str, default=True, help='whether use fixed indices or randomly generate new ones')
         parser.add_argument('--name', type=str, default='experiment_name', help='name of the experiment. It decides where to store samples and models')
         parser.add_argument('--gpu_ids', type=str, default='-1', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
