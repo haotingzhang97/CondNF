@@ -17,15 +17,16 @@ class BaseOptions():
         """Define the common options that are used in both training and test."""
         # basic parameters
         parser.add_argument('--dataset_name', type=str, default='MNIST', help='dataset name')
-        parser.add_argument('--subset', type=float, default=0.1, help='the percentage of training data loaded')
+        parser.add_argument('--subset', type=float, default=1, help='the percentage of training data loaded')
         parser.add_argument('--val_proportion', type=float, default=0.2, help='the percentage of training data used for validation')
         parser.add_argument('--resize', type=str, default=True, help='whether resize data')
         parser.add_argument('--newsize', type=int, default=32, help='the new size of each side, if resize==True')
+        parser.add_argument('--fixed_indices', type=int, default=True, help='whether use fixed indices or randomly generate new ones')
         parser.add_argument('--name', type=str, default='experiment_name', help='name of the experiment. It decides where to store samples and models')
         parser.add_argument('--gpu_ids', type=str, default='-1', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
         # general model parameters
-        parser.add_argument('--model_name', type=str, default='unet', help='chooses which model to use. [unet | pix2pix | MSGAN | CNF]')
+        parser.add_argument('--model_name', type=str, default='cglow', help='chooses which model to use. [unet | pix2pix | MSGAN | cglow]')
         parser.add_argument('--seg', type=int, default=1, help='whether treat as a segmentation problem (1) or not (0)')
         # model parameters for all models
         parser.add_argument('--input_nc', type=int, default=1, help='# of input image channels: 3 for RGB and 1 for grayscale')
