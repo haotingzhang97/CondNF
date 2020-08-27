@@ -26,7 +26,15 @@ if __name__ == '__main__':
 
     # create a dataset given opt.dataset_mode and other options
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    dataset = LIDC_IDRI(dataset_location='LIDCdata/')
+    if opt.newsize != 128:
+        transform_resize = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.Resize((opt.newsize, opt.newsize)),
+            transforms.ToTensor(),
+        ])
+        dataset = LIDC_IDRI(dataset_location='LIDCdata/', transform=transform_resize)
+    else:
+        dataset = LIDC_IDRI(dataset_location='LIDCdata/')
     dataset_size = len(dataset)
     if opt.fixed_indices == True:
         train_indices = np.load('/content/drive/My Drive/Colab Notebooks/CondNF_ver1/savedmodel/train_indices.npy')
@@ -71,7 +79,7 @@ if __name__ == '__main__':
 
         for i, (x, y, _) in enumerate(train_loader):  # inner loop within one epoch
             x = x.to(device)
-            y = torch.unsqueeze(y, 1)
+            #y = torch.unsqueeze(y, 1)
             y = y.to(device)
             total_iters += opt.batch_size
             epoch_iter += opt.batch_size
@@ -93,18 +101,19 @@ if __name__ == '__main__':
             optim.step()
 
         val_loss = 0
-        for i, (x, y, _) in enumerate(val_loader):
-            x = x.to(device).float()
-            y = torch.unsqueeze(y, 1)
-            y = y.to(device).float()
-            y = preprocess(y, 1.0, 0.0, opt.y_bins, True)
-            z, nll = model.forward(x, y)
-            valloss = torch.sum(nll)
-            val_loss += valloss.detach().cpu().numpy()
-        val_loss /= len(val_indices)
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            bestmodel = copy.deepcopy(model)
+        with torch.no_grad():
+            for i, (x, y, _) in enumerate(val_loader):
+                x = x.to(device).float()
+                #y = torch.unsqueeze(y, 1)
+                y = y.to(device).float()
+                y = preprocess(y, 1.0, 0.0, opt.y_bins, True)
+                z, nll = model.forward(x, y)
+                valloss = torch.sum(nll)
+                val_loss += valloss.detach().cpu().numpy()
+            val_loss /= len(val_indices)
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                bestmodel = copy.deepcopy(model)
 
         print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss.detach().cpu().numpy()), 'val loss {}'.format(val_loss))
 

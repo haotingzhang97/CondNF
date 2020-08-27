@@ -127,13 +127,15 @@ def load_data_seg(opt):
         return train_set.data, train_set.targets, test_set.data, test_set.targets, train_set_colorized, train_set_seg
 
 
-def preprocess(x, scale, bias, bins, noise=False):
+def preprocess(x, scale, bias, bins, noise=False, method='uniform'):
 
     x = x / scale
     x = x - bias
 
-    if noise == True:
+    if noise is True and method == 'uniform':
         x = x + torch.zeros_like(x).uniform_(-0.5 * bins, 0.5 * bins)
+    if noise is True and method == 'variational':
+        x = x
     return x
 
 

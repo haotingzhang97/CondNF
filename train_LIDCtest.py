@@ -25,7 +25,7 @@ opt.batch_size = 4
 opt.input_nc = 1
 opt.output_nc = 1
 opt.seg = 1
-opt.newsize = 128
+opt.newsize = 64
 opt.fixed_indices = False
 
 if opt.model_name == 'cglow':
@@ -34,7 +34,14 @@ if opt.model_name == 'cglow':
 
 # create a dataset given opt.dataset_mode and other options
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-dataset = LIDC_IDRI(dataset_location='LIDCdata/')
+transform_resize = transforms.Compose([
+    #transforms.ToTensor(),
+    transforms.ToPILImage(),
+    transforms.Resize((opt.newsize, opt.newsize)),
+    transforms.ToTensor(),
+    # transforms.Lambda(lambda x: x.repeat(3, 1, 1) ),
+])
+dataset = LIDC_IDRI(dataset_location='LIDCdata/', transform=transform_resize)
 dataset_size = len(dataset)
 if opt.fixed_indices == True:
     train_indices = np.load('/content/drive/My Drive/Colab Notebooks/CondNF_ver1/savedmodel/train_indices.npy')
@@ -79,7 +86,7 @@ for epoch in range(1,
 
     for i, (x, y, _) in enumerate(train_loader):  # inner loop within one epoch
         x = x.to(device)
-        y = torch.unsqueeze(y, 1)
+        #y = torch.unsqueeze(y, 1)
         y = y.to(device)
         total_iters += opt.batch_size
         epoch_iter += opt.batch_size
@@ -103,7 +110,7 @@ for epoch in range(1,
     val_loss = 0
     for i, (x, y, _) in enumerate(val_loader):
         x = x.to(device).float()
-        y = torch.unsqueeze(y, 1)
+        #y = torch.unsqueeze(y, 1)
         y = y.to(device).float()
         y = preprocess(y, 1.0, 0.0, opt.y_bins, True)
         z, nll = model.forward(x, y)
