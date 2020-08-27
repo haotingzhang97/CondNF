@@ -16,17 +16,19 @@ from options.train_options import TrainOptions
 from data.load_LIDC_data import LIDC_IDRI
 from data import *
 from models import create_model
+from models.utils import *
 
 
 opt = TrainOptions().parse()   # get training options
-opt.model_name = 'cglow'
+opt.model_name = 'prob_unet'
 opt.subset = 0.001
 opt.batch_size = 4
 opt.input_nc = 1
 opt.output_nc = 1
 opt.seg = 1
-opt.newsize = 64
+opt.newsize = 128
 opt.fixed_indices = False
+
 
 if opt.model_name == 'cglow':
     opt.x_size = (opt.input_nc, opt.newsize, opt.newsize)
@@ -34,14 +36,15 @@ if opt.model_name == 'cglow':
 
 # create a dataset given opt.dataset_mode and other options
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-transform_resize = transforms.Compose([
-    #transforms.ToTensor(),
-    transforms.ToPILImage(),
-    transforms.Resize((opt.newsize, opt.newsize)),
-    transforms.ToTensor(),
-    # transforms.Lambda(lambda x: x.repeat(3, 1, 1) ),
-])
-dataset = LIDC_IDRI(dataset_location='LIDCdata/', transform=transform_resize)
+if opt.newsize != 128:
+    transform_resize = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((opt.newsize, opt.newsize)),
+        transforms.ToTensor(),
+    ])
+    dataset = LIDC_IDRI(dataset_location='LIDCdata/', transform=transform_resize)
+else:
+    dataset = LIDC_IDRI(dataset_location='LIDCdata/')
 dataset_size = len(dataset)
 if opt.fixed_indices == True:
     train_indices = np.load('/content/drive/My Drive/Colab Notebooks/CondNF_ver1/savedmodel/train_indices.npy')
@@ -64,7 +67,7 @@ val_sampler = SubsetRandomSampler(val_indices)
 test_sampler = SubsetRandomSampler(test_indices)
 train_loader = Data.DataLoader(dataset, batch_size=opt.batch_size, sampler=train_sampler)
 val_loader = Data.DataLoader(dataset, batch_size=1, sampler=val_sampler)
-#test_loader = Data.DataLoader(dataset, batch_size=1, sampler=test_sampler)
+# test_loader = Data.DataLoader(dataset, batch_size=1, sampler=test_sampler)
 print("Number of training/val/test patches:", (len(train_indices), len(val_indices), len(test_indices)))
 
 if opt.pretrain == 0:
@@ -86,7 +89,7 @@ for epoch in range(1,
 
     for i, (x, y, _) in enumerate(train_loader):  # inner loop within one epoch
         x = x.to(device)
-        #y = torch.unsqueeze(y, 1)
+        # y = torch.unsqueeze(y, 1)
         y = y.to(device)
         total_iters += opt.batch_size
         epoch_iter += opt.batch_size
@@ -95,34 +98,51 @@ for epoch in range(1,
             optim = torch.optim.Adam(model.parameters(), lr=opt.lr)
         x = x.float()
         y = y.float()
-        y = preprocess(y, 1.0, 0.0, opt.y_bins, True)
-        z, nll = model.forward(x, y)
-        loss = torch.mean(nll)
+        if opt.model_name == 'cglow':
+            y = preprocess(y, 1.0, 0.0, opt.y_bins, True)
+            z, nll = model.forward(x, y)
+            loss = torch.mean(nll)
+        if opt.model_name == 'prob_unet':
+            model.forward(x, y, training=True)
+            elbo = model.elbo(y)
+            reg_loss = l2_regularisation(model.posterior) + l2_regularisation(model.prior) + l2_regularisation(
+                model.fcomb.layers)
+            loss = -elbo + 1e-5 * reg_loss
         model.zero_grad()
         optim.zero_grad()
         loss.backward()
-        if opt.max_grad_clip > 0:
-            torch.nn.utils.clip_grad_value_(model.parameters(), opt.max_grad_clip)
-        if opt.max_grad_norm > 0:
-            torch.nn.utils.clip_grad_norm_(model.parameters(), opt.max_grad_norm)
+        if opt.model_name == 'cglow':
+            if opt.max_grad_clip > 0:
+                torch.nn.utils.clip_grad_value_(model.parameters(), opt.max_grad_clip)
+            if opt.max_grad_norm > 0:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), opt.max_grad_norm)
         optim.step()
 
     val_loss = 0
-    for i, (x, y, _) in enumerate(val_loader):
-        x = x.to(device).float()
-        #y = torch.unsqueeze(y, 1)
-        y = y.to(device).float()
-        y = preprocess(y, 1.0, 0.0, opt.y_bins, True)
-        z, nll = model.forward(x, y)
-        valloss = torch.sum(nll)
-        val_loss += valloss.detach().cpu().numpy()
-    val_loss /= len(val_indices)
-    if val_loss < best_val_loss:
-        best_val_loss = val_loss
-        bestmodel = copy.deepcopy(model)
+    with torch.no_grad():
+        for i, (x, y, _) in enumerate(val_loader):
+            x = x.to(device).float()
+            # y = torch.unsqueeze(y, 1)
+            y = y.to(device).float()
+            y = preprocess(y, 1.0, 0.0, opt.y_bins, True)
+            if opt.model_name == 'cglow':
+                z, nll = model.forward(x, y)
+                valloss = torch.sum(nll)
+                val_loss += valloss.detach().cpu().numpy()
+            if opt.model_name == 'prob_unet':
+                model.forward(x, y, training=True)
+                elbo = model.elbo(y)
+                reg_loss = l2_regularisation(model.posterior) + l2_regularisation(model.prior) + l2_regularisation(
+                    model.fcomb.layers)
+                valloss = -elbo + 1e-5 * reg_loss
+                val_loss += valloss.detach().cpu().numpy() * x.size(0)
+        val_loss /= len(val_indices)
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            bestmodel = copy.deepcopy(model)
 
-    print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss.detach().cpu().numpy()), 'val loss {}'.format(val_loss))
+    print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss.detach().cpu().numpy()),
+          'val loss {}'.format(val_loss))
 
 print('Training finished')
 torch.save(bestmodel, opt.save_model_name)
-

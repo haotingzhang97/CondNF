@@ -2,6 +2,7 @@ from models.unet_model import Unet
 from models.pix2pix_model import Pix2PixModel
 from models.msgan_model import MSGAN
 from models.cglow_model import *
+from models.probabilistic_unet import *
 
 def create_model(opt):
     """Create a model given the option.
@@ -19,6 +20,8 @@ def create_model(opt):
         return MSGAN(opt)
     elif opt.model_name == 'cglow':
         return CondGlowModel(opt)
+    elif opt.model_name == 'prob_unet':
+        return ProbabilisticUnet(input_channels=1, num_classes=1, num_filters=[32,64,128,192], latent_dim=2, no_convs_fcomb=4, beta=10.0)
     else:
         print("No model with the defined name")
         raise

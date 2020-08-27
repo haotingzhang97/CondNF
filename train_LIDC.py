@@ -16,6 +16,7 @@ from options.train_options import TrainOptions
 from data.load_LIDC_data import LIDC_IDRI
 from data import *
 from models import create_model
+from models.utils import *
 
 
 if __name__ == '__main__':
@@ -88,16 +89,24 @@ if __name__ == '__main__':
                 optim = torch.optim.Adam(model.parameters(), lr=opt.lr)
             x = x.float()
             y = y.float()
-            y = preprocess(y, 1.0, 0.0, opt.y_bins, True)
-            z, nll = model.forward(x, y)
-            loss = torch.mean(nll)
+            if opt.model_name == 'cglow':
+                y = preprocess(y, 1.0, 0.0, opt.y_bins, True)
+                z, nll = model.forward(x, y)
+                loss = torch.mean(nll)
+            if opt.model_name == 'prob_unet':
+                model.forward(x, y, training=True)
+                elbo = model.elbo(y)
+                reg_loss = l2_regularisation(model.posterior) + l2_regularisation(model.prior) + l2_regularisation(
+                    model.fcomb.layers)
+                loss = -elbo + 1e-5 * reg_loss
             model.zero_grad()
             optim.zero_grad()
             loss.backward()
-            if opt.max_grad_clip > 0:
-                torch.nn.utils.clip_grad_value_(model.parameters(), opt.max_grad_clip)
-            if opt.max_grad_norm > 0:
-                torch.nn.utils.clip_grad_norm_(model.parameters(), opt.max_grad_norm)
+            if opt.model_name == 'cglow':
+                if opt.max_grad_clip > 0:
+                    torch.nn.utils.clip_grad_value_(model.parameters(), opt.max_grad_clip)
+                if opt.max_grad_norm > 0:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), opt.max_grad_norm)
             optim.step()
 
         val_loss = 0
