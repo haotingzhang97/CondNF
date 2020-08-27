@@ -113,12 +113,20 @@ if __name__ == '__main__':
         with torch.no_grad():
             for i, (x, y, _) in enumerate(val_loader):
                 x = x.to(device).float()
-                #y = torch.unsqueeze(y, 1)
+                # y = torch.unsqueeze(y, 1)
                 y = y.to(device).float()
                 y = preprocess(y, 1.0, 0.0, opt.y_bins, True)
-                z, nll = model.forward(x, y)
-                valloss = torch.sum(nll)
-                val_loss += valloss.detach().cpu().numpy()
+                if opt.model_name == 'cglow':
+                    z, nll = model.forward(x, y)
+                    valloss = torch.sum(nll)
+                    val_loss += valloss.detach().cpu().numpy()
+                if opt.model_name == 'prob_unet':
+                    model.forward(x, y, training=True)
+                    elbo = model.elbo(y)
+                    reg_loss = l2_regularisation(model.posterior) + l2_regularisation(model.prior) + l2_regularisation(
+                        model.fcomb.layers)
+                    valloss = -elbo + 1e-5 * reg_loss
+                    val_loss += valloss.detach().cpu().numpy() * x.size(0)
             val_loss /= len(val_indices)
             if val_loss < best_val_loss:
                 best_val_loss = val_loss

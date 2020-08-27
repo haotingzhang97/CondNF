@@ -21,7 +21,7 @@ def create_model(opt):
     elif opt.model_name == 'cglow':
         return CondGlowModel(opt)
     elif opt.model_name == 'prob_unet':
-        return ProbabilisticUnet(input_channels=1, num_classes=1, num_filters=[32,64,128,192], latent_dim=2, no_convs_fcomb=4, beta=10.0)
+        return ProbabilisticUnet(input_channels=1, num_classes=1, num_filters=[32,64,128,192], latent_dim=2, no_convs_fcomb=4, beta=opt.beta_unet)
     else:
         print("No model with the defined name")
         raise
