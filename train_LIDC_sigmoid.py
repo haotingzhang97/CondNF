@@ -93,7 +93,7 @@ if __name__ == '__main__':
             y = y.float()
             if opt.model_name == 'cglow':
                 y = preprocess(y, 1.0, 0.0, opt.y_bins, True)
-                z, nll = model.forward(x, y)
+                z, nll = model.forward(x, y, sigmoid=True)
                 loss = torch.mean(nll)
             if opt.model_name == 'prob_unet':
                 model.forward(x, y, training=True)
@@ -110,7 +110,7 @@ if __name__ == '__main__':
                 if opt.max_grad_norm > 0:
                     torch.nn.utils.clip_grad_norm_(model.parameters(), opt.max_grad_norm)
             optim.step()
-
+        train_loss_vec = np.append(train_loss_vec, loss.detach().cpu().numpy())
         val_loss = 0
         with torch.no_grad():
             for i, (x, y, _) in enumerate(val_loader):
@@ -119,7 +119,7 @@ if __name__ == '__main__':
                 y = y.to(device).float()
                 y = preprocess(y, 1.0, 0.0, opt.y_bins, True)
                 if opt.model_name == 'cglow':
-                    z, nll = model.forward(x, y)
+                    z, nll = model.forward(x, y, sigmoid=True)
                     valloss = torch.sum(nll)
                     val_loss += valloss.detach().cpu().numpy()
                 if opt.model_name == 'prob_unet':
@@ -133,7 +133,7 @@ if __name__ == '__main__':
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 bestmodel = copy.deepcopy(model)
-
+        val_loss_vec = np.append(val_loss_vec, val_loss)
         print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss.detach().cpu().numpy()), 'val loss {}'.format(val_loss))
 
     print('Training finished')

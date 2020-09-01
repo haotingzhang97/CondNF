@@ -164,14 +164,22 @@ class CondGlowModel(nn.Module):
             return torch.zeros_like(self.new_mean), torch.zeros_like(self.new_mean)
 
 
-    def forward(self, x=0.0, y=None, eps_std=1.0, reverse=False):
+    def forward(self, x=0.0, y=None, eps_std=1.0, reverse=False, sigmoid=False, sign_sigmoid=False):
         if reverse == False:
             dimensions = y.size(1)*y.size(2)*y.size(3)
             logdet = torch.zeros_like(y[:, 0, 0, 0])
             logdet += float(-np.log(self.n_bins) * dimensions)
+            if sigmoid:
+                y = 0.5 * (y + 0.5)
+                y = torch.log(y) - torch.log(1-y)
+                obj = 1 / torch.sum(2*torch.sigmoid(y)*(1-torch.sigmoid(y)))
+            if sign_sigmoid:
+                y = y
             z, objective = self.flow(x, y, logdet=logdet, reverse=False)
             mean, logs = self.prior()
             objective += GaussianDiag.logp(mean, logs, z)
+            if sigmoid or sign_sigmoid:
+                objective += obj
             nll = -objective / float(np.log(2.) * dimensions)
             return z, nll
 
@@ -181,4 +189,8 @@ class CondGlowModel(nn.Module):
                 if y is None:
                     y = GaussianDiag.batchsample(x.size(0), mean, logs, eps_std)
                 y, logdet = self.flow(x, y, eps_std=eps_std, reverse=True)
+                if sigmoid:
+                    y = 2 * torch.sigmoid(y) - 0.5
+                if sign_sigmoid:
+                    y = y
             return y, logdet
