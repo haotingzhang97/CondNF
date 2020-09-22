@@ -92,9 +92,20 @@ if __name__ == '__main__':
             x = x.float()
             y = y.float()
             if opt.model_name == 'cglow':
+                if opt.output_nc == 2:
+                    y = y.repeat(1, 2, 1, 1)
+                    y[:, 0, :, :] = torch.ones_like(y[:, 0, :, :]) - y[:, 0, :, :]
+                if opt.sign_sigmoid == True:
+                    y = (2 * opt.mode - opt.y_bins) * y - opt.mode + opt.y_bins
                 y = preprocess(y, 1.0, 0.0, opt.y_bins, True)
-                z, nll = model.forward(x, y)
-                loss = torch.mean(nll)
+                z, nll = model.forward(x, y, sigmoid=opt.sigmoid, sign_sigmoid=opt.sign_sigmoid, linear_map=opt.linear_map)
+                if opt.lambda_L1flow > 0.0:
+                    yhat, _ = model.forward(x[np.array([0]), :, :, :], reverse=True, sigmoid=opt.sigmoid, sign_sigmoid=opt.sign_sigmoid, linear_map=opt.linear_map)
+                    lossL1 = opt.lambda_L1flow * nn.L1Loss()(yhat, y[np.array([0]), :, :, :])
+                    lossL1 = Variable(lossL1, requires_grad = True)
+                    loss = torch.sum(nll) + lossL1
+                else:
+                    loss = torch.sum(nll)
             if opt.model_name == 'prob_unet':
                 model.forward(x, y, training=True)
                 elbo = model.elbo(y)
@@ -110,16 +121,21 @@ if __name__ == '__main__':
                 if opt.max_grad_norm > 0:
                     torch.nn.utils.clip_grad_norm_(model.parameters(), opt.max_grad_norm)
             optim.step()
-
+        train_loss_vec = np.append(train_loss_vec, loss.detach().cpu().numpy())
         val_loss = 0
         with torch.no_grad():
             for i, (x, y, _) in enumerate(val_loader):
                 x = x.to(device).float()
                 # y = torch.unsqueeze(y, 1)
                 y = y.to(device).float()
-                y = preprocess(y, 1.0, 0.0, opt.y_bins, True)
                 if opt.model_name == 'cglow':
-                    z, nll = model.forward(x, y)
+                    if opt.output_nc == 2:
+                        y = y.repeat(1, 2, 1, 1)
+                        y[:, 0, :, :] = torch.ones_like(y[:, 0, :, :]) - y[:, 0, :, :]
+                    if opt.sign_sigmoid == True:
+                        y = (2 * opt.mode - opt.y_bins) * y - opt.mode + opt.y_bins
+                    y = preprocess(y, 1.0, 0.0, opt.y_bins, True)
+                    z, nll = model.forward(x, y, sigmoid=opt.sigmoid, sign_sigmoid=opt.sign_sigmoid, linear_map=opt.linear_map)
                     valloss = torch.sum(nll)
                     val_loss += valloss.detach().cpu().numpy()
                 if opt.model_name == 'prob_unet':
@@ -133,7 +149,7 @@ if __name__ == '__main__':
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 bestmodel = copy.deepcopy(model)
-
+        val_loss_vec = np.append(val_loss_vec, val_loss)
         print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss.detach().cpu().numpy()), 'val loss {}'.format(val_loss))
 
     print('Training finished')

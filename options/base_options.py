@@ -18,6 +18,7 @@ class BaseOptions():
         # basic parameters
         parser.add_argument('--dataset_name', type=str, default='MNIST', help='dataset name')
         parser.add_argument('--subset', type=float, default=1, help='the percentage of training data loaded')
+        parser.add_argument('--saved_set', type=float, default=0.01, help='select a set of saved indices')
         parser.add_argument('--val_proportion', type=float, default=0.2, help='the percentage of training data used for validation')
         parser.add_argument('--resize', type=str, default=True, help='whether resize data')
         parser.add_argument('--newsize', type=int, default=32, help='the new size of each side, if resize==True')
@@ -64,6 +65,11 @@ class BaseOptions():
         parser.add_argument("--label_bias", type=float, default=0.5)
         parser.add_argument("--x_bins", type=float, default=1.0/256.0)
         parser.add_argument("--y_bins", type=float, default=0.2)
+        parser.add_argument("--mode", type=float, default=1.0)
+        parser.add_argument('--lambda_L1flow', type=float, default=0.0, help='weight for L1 loss')
+        parser.add_argument("--sigmoid", type=bool, default=False)
+        parser.add_argument("--sign_sigmoid", type=bool, default=False)
+        parser.add_argument("--linear_map", type=bool, default=False)
         # Parameters for probabilistic U-Net
         parser.add_argument("--beta_unet", type=float, default=20.0)
 

@@ -22,19 +22,20 @@ opt.p = p
 opt.newsize = 128
 _, _, test_data, test_targets, _ = load_data(opt)  # create a dataset given opt.dataset_mode and other options
 
+test_data = test_data[0:1000,:,:,:]; test_targets = test_targets[0:1000]
 '''
 opt.model_name = 'unet'
 model = create_model(opt)
-model.load_state_dict(torch.load('/Users/Haoting/Desktop/MSc_code/savedmodels/unet_model2_mae2.pt',map_location=torch.device('cpu')))
+model.load_state_dict(torch.load('/Users/Haoting/Desktop/MSc_code/savedmodels/unet_model2_mae2.pt', map_location=torch.device('cpu')))
 opt.gpu_ids = -1
-ged = ged_mnist(test_data, test_targets, p, model, opt, 10, 10, 'mssim')
-print(ged)
-print(np.mean(ged))
+ged, div0 = ged_mnist(test_data, test_targets, p, model, opt, 10, 10, 'L1')
+print(np.mean(ged), np.mean(div0))  # this is actually ged^2
+
 
 model = torch.load('/Users/Haoting/Desktop/MSc_code/savedmodels/model_pix2pix01.pt', map_location=torch.device('cpu'))
 opt.model_name = 'pix2pix'
 opt.gpu_ids = -1
-ged = ged_mnist(test_data, test_targets, p, model, opt, 10, 10, 'mssim')
+ged = ged_mnist(test_data, test_targets, p, model, opt, 10, 10, 'L1')
 print(ged)
 print(np.mean(ged))
 '''
@@ -46,6 +47,7 @@ print(ged)
 print(np.mean(ged))
 '''
 model = torch.load('/Users/Haoting/Desktop/MSc_code/savedmodels/model_cglow11.pt', map_location=torch.device('cpu'))
+model = torch.load('/Users/Haoting/Desktop/MSc_code/savedmodels/model_cglow002.pt', map_location=torch.device('cpu'))
 opt.model_name = 'cglow'
 opt.gpu_ids = -1
 ged = ged_mnist(test_data, test_targets, p, model, opt, 10, 10, 'L1')

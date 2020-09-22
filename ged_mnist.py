@@ -3,38 +3,6 @@ from skimage.metrics import structural_similarity as ssim
 #from pytorch_msssim import ssim, ms_ssim, SSIM, MS_SSIM
 
 
-class MMD_loss(nn.Module):
-    def __init__(self, kernel_mul = 2.0, kernel_num = 5):
-        super(MMD_loss, self).__init__()
-        self.kernel_num = kernel_num
-        self.kernel_mul = kernel_mul
-        self.fix_sigma = None
-        return
-    def guassian_kernel(self, source, target, kernel_mul=2.0, kernel_num=5, fix_sigma=None):
-        n_samples = int(source.size()[0])+int(target.size()[0])
-        total = torch.cat([source, target], dim=0)
-
-        total0 = total.unsqueeze(0).expand(int(total.size(0)), int(total.size(0)), int(total.size(1)))
-        total1 = total.unsqueeze(1).expand(int(total.size(0)), int(total.size(0)), int(total.size(1)))
-        L2_distance = ((total0-total1)**2).sum(2)
-        if fix_sigma:
-            bandwidth = fix_sigma
-        else:
-            bandwidth = torch.sum(L2_distance.data) / (n_samples**2-n_samples)
-        bandwidth /= kernel_mul ** (kernel_num // 2)
-        bandwidth_list = [bandwidth * (kernel_mul**i) for i in range(kernel_num)]
-        kernel_val = [torch.exp(-L2_distance / bandwidth_temp) for bandwidth_temp in bandwidth_list]
-        return sum(kernel_val)
-
-    def forward(self, source, target):
-        batch_size = int(source.size()[0])
-        kernels = guassian_kernel(source, target, kernel_mul=self.kernel_mul, kernel_num=self.kernel_num, fix_sigma=self.fix_sigma)
-        XX = kernels[:batch_size, :batch_size]
-        YY = kernels[batch_size:, batch_size:]
-        XY = kernels[:batch_size, batch_size:]
-        YX = kernels[batch_size:, :batch_size]
-        loss = torch.mean(XX + YY - XY -YX)
-        return loss
 
 def np_L1loss(x, y):
     return np.mean(np.absolute(np.array(x)-np.array(y)))
@@ -58,7 +26,9 @@ def ged_mnist(data_x, target_x, p, model, opt, n_samples=100, n_each_digit=1, lo
     # compute the three ground truth modes for all items in the test set (data_x to data_gt) [size: n,1,p,p]
     dim_x = np.shape(data_x)[2]
     ged = np.zeros((10))   # compute ged separately for the 10 digits
+    div0 = np.zeros((10))
     for digit in range(10):
+        print(digit)
         ind = np.where(target_x == digit)[0]
         i = ind[np.random.randint(0, len(ind), n_each_digit)]
         data_gt_red = colorize_red(data_x[i,:,:,:], d=1, output_type='np')
@@ -159,6 +129,7 @@ def ged_mnist(data_x, target_x, p, model, opt, n_samples=100, n_each_digit=1, lo
                     if loss == 'mssim':
                         dSS += 1 - ssim_batch(output_mat[k1, :, :, :, :], output_mat[k2, :, :, :, :])
             dSS /= (n_samples * n_samples)
-        ged[digit] = np.sqrt(2 * dSY - dSS - dYY)
+        div0[digit] = dSS
+        ged[digit] = 2 * dSY - dSS - dYY
         print(dSY, dSS, dYY)
-    return ged
+    return ged, div0

@@ -154,6 +154,8 @@ class CondGlowModel(nn.Module):
                                      self.flow.output_shapes[-1][3]])))
 
         self.n_bins = args.y_bins
+        self.mode = args.mode
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
     def prior(self):
@@ -164,17 +166,28 @@ class CondGlowModel(nn.Module):
             return torch.zeros_like(self.new_mean), torch.zeros_like(self.new_mean)
 
 
-    def forward(self, x=0.0, y=None, eps_std=1.0, reverse=False, sigmoid=False, sign_sigmoid=False):
+    def forward(self, x=0.0, y=None, eps_std=1.0, reverse=False, sigmoid=False, sign_sigmoid=False, linear_map=False):
         if reverse == False:
             dimensions = y.size(1)*y.size(2)*y.size(3)
             logdet = torch.zeros_like(y[:, 0, 0, 0])
             logdet += float(-np.log(self.n_bins) * dimensions)
             if sigmoid:
-                y = 0.5 * (y + 0.5)
-                y = torch.log(y) - torch.log(1-y)
-                obj = 1 / torch.sum(2*torch.sigmoid(y)*(1-torch.sigmoid(y)))
+                b = self.n_bins
+                y = y - 0.5
+                y = torch.sign(y) * (torch.log(2*(torch.abs(y)-b)/(1-b)) - torch.log(1 - 2*(torch.abs(y)-b)/(1-b)))
+                obj = -torch.sum(torch.log(0.5*(1-b)*torch.sigmoid(y)*(1-torch.sigmoid(y))))
+                #y = 10 * torch.sign(y) * (torch.log(y * torch.sign(y) / (1-b)) - torch.log(1 - y * torch.sign(y) / (1-b)))
+                #obj = torch.sum(torch.log(torch.abs( 10 * (1-b) * torch.sign(y) / (y*(1-b-y*torch.sign(y))) )))
             if sign_sigmoid:
-                y = y
+                a = torch.tensor(2.0 * self.n_bins).to(self.device)
+                b = torch.tensor(self.mode - 1.5 * self.n_bins).to(self.device)
+                g_y = (y * torch.sign(y) - b) / a
+                y = torch.log(g_y / (1 - g_y))
+                #obj = torch.sum(torch.div(torch.sign(y), a*torch.sigmoid(y)*(1-torch.sigmoid(y))))
+                obj = torch.abs(torch.sum(torch.log(a) + torch.log(torch.sigmoid(y)) + torch.log(1 - torch.sigmoid(y))))
+            if linear_map:
+                y = (0.5 * (torch.sign(0.5 - y) + 1)) * (y + 0.5 - 0.5 * self.n_bins) + (
+                            0.5 * (torch.sign(y - 0.5) + 1)) * (y - 0.5 + 0.5 * self.n_bins)
             z, objective = self.flow(x, y, logdet=logdet, reverse=False)
             mean, logs = self.prior()
             objective += GaussianDiag.logp(mean, logs, z)
@@ -190,7 +203,15 @@ class CondGlowModel(nn.Module):
                     y = GaussianDiag.batchsample(x.size(0), mean, logs, eps_std)
                 y, logdet = self.flow(x, y, eps_std=eps_std, reverse=True)
                 if sigmoid:
-                    y = 2 * torch.sigmoid(y) - 0.5
+                    #y = 2 * torch.sigmoid(y) - 0.5
+                    b = self.n_bins
+                    y = 0.5 + torch.sign(y) * (b + 0.5*(1-b)*torch.sigmoid(torch.abs(y)))
+                    #y = 0.5 + torch.sign(y) * (1-b) * torch.sigmoid(torch.abs(y)/10)
                 if sign_sigmoid:
-                    y = y
+                    a = 2.0 * self.n_bins
+                    b = self.mode - 1.5 * self.n_bins
+                    y = torch.sign(y) * (b + a * torch.sigmoid(y))
+                if linear_map:
+                    y = (0.5 * (torch.sign(0.5 - y) + 1)) * (y - 0.5 + 0.5 * self.n_bins) + (
+                                0.5 * (torch.sign(y - 0.5) + 1)) * (y + 0.5 - 0.5 * self.n_bins)
             return y, logdet

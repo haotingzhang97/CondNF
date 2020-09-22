@@ -124,6 +124,8 @@ def load_data_seg(opt):
                         train_set_seg[i, 3, k1, k2] = 1
                     else:
                         train_set_seg[i, 0, k1, k2] = 1
+        if opt.output_nc == 3:
+            train_set_seg = train_set_seg[:, np.array([0, 1, 3]), :, :]
         return train_set.data, train_set.targets, test_set.data, test_set.targets, train_set_colorized, train_set_seg
 
 
