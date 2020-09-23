@@ -3,7 +3,7 @@ This repository contains code for my MSc Machine Learning project at UCL.
 The implementation of U-Net and pix2pix are modified from the original authors of pix2pix:
 
 - Image-to-Image Translation with Conditional Adversarial Networks.<br>
-[Phillip Isola](https://people.eecs.berkeley.edu/~isola), [Jun-Yan Zhu](https://people.eecs.berkeley.edu/~junyanz), [Tinghui Zhou](https://people.eecs.berkeley.edu/~tinghuiz), [Alexei A. Efros](https://people.eecs.berkeley.edu/~efros). In CVPR 2017.
+[Phillip Isola](https://people.eecs.berkeley.edu/~isola), [Jun-Yan Zhu](https://people.eecs.berkeley.edu/~junyanz), [Tinghui Zhou](https://people.eecs.berkeley.edu/~tinghuiz), [Alexei A. Efros](https://people.eecs.berkeley.edu/~efros). In CVPR 2017.<br>
 [[arxiv]](https://arxiv.org/abs/1611.07004); [[repo]](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix)
 
 The implementation of MSGAN is modified from its original authors:
@@ -20,4 +20,4 @@ You Lu, Bert Huang. In AAAI, 2020<br>
 
 The implementations of Probabilistic U-Net and LIDC dataloader are modified from the following github repository:
 
-- [[repo]](https://github.com/stefanknegt/Probabilistic-Unet-Pytorch)
+- A Probabilistic U-Net for segmentation of ambiguous images implemented in PyTorch [[repo]](https://github.com/stefanknegt/Probabilistic-Unet-Pytorch)
