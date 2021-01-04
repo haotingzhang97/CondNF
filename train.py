@@ -20,7 +20,7 @@ import wandb
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
 
-    wandb.init(project="cond_nf", mode=opt.wandb_mode)
+    wandb.init(project="cond_nf", entity='haotingzhang', mode=opt.wandb_mode)
     for (key, value) in wandb.config.items():
         setattr(opt, key, value)
     # update configs
