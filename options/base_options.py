@@ -16,8 +16,10 @@ class BaseOptions():
     def initialize(self, parser):
         """Define the common options that are used in both training and test."""
         # basic parameters
+        parser.add_argument('--wandb_mode', type=str, default="online", metavar='N',
+                            help="mode of wandb run tracking, either no tracking ('disabled') or with tracking ('online')")
         parser.add_argument('--dataset_name', type=str, default='MNIST', help='dataset name')
-        parser.add_argument('--subset', type=float, default=1, help='the percentage of training data loaded')
+        parser.add_argument('--subset', type=float, default=0.001, help='the percentage of training data loaded')
         parser.add_argument('--saved_set', type=float, default=0.01, help='select a set of saved indices')
         parser.add_argument('--val_proportion', type=float, default=0.2, help='the percentage of training data used for validation')
         parser.add_argument('--resize', type=str, default=True, help='whether resize data')
@@ -28,7 +30,7 @@ class BaseOptions():
         parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
         # general model parameters
         parser.add_argument('--model_name', type=str, default='cglow', help='chooses which model to use. [unet | pix2pix | MSGAN | cglow]')
-        parser.add_argument('--seg', type=int, default=1, help='whether treat as a segmentation problem (1) or not (0)')
+        parser.add_argument('--seg', type=int, default=0, help='whether treat as a segmentation problem (1) or not (0)')
         # model parameters for all models
         parser.add_argument('--input_nc', type=int, default=1, help='# of input image channels: 3 for RGB and 1 for grayscale')
         parser.add_argument('--output_nc', type=int, default=3, help='# of output image channels: 3 for RGB and 1 for grayscale')

@@ -14,10 +14,18 @@ from colorization import *
 from options.train_options import TrainOptions
 from data import *
 from models import create_model
+import wandb
 
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
+
+    wandb.init(project="cond_nf", mode=opt.wandb_mode)
+    for (key, value) in wandb.config.items():
+        setattr(opt, key, value)
+    # update configs
+    wandb.config.update(opt)
+
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     p = np.zeros((10, 3))
     for i in range(10):
@@ -101,6 +109,9 @@ if __name__ == '__main__':
             print('Wrong model name')
         total_iters = 0  # the total number of training iterations
 
+        # weights&biases tracking (gradients, network topology)
+        wandb.watch(model)
+
         print('Start training')
         best_val_loss = 10000
         for epoch in range(1,
@@ -165,6 +176,7 @@ if __name__ == '__main__':
             if opt.model_name == 'cglow':
                 print('Epoch {} done, '.format(epoch), 'training loss {}'.format(loss.detach().cpu().numpy()),
                       'val loss {}'.format(val_loss))
+                wandb.log({'epoch': epoch, 'train_loss': loss, 'val_loss': val_loss})
 
     if opt.sample_method == 1:
         model = create_model(opt)
