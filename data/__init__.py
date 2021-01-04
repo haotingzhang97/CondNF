@@ -28,14 +28,15 @@ def load_data(opt):
         #train_set.targets = train_set.train_labels
         #test_set.targets = test_set.test_labels
         N = len(train_set.targets)
-        K = np.floor(N*opt.subset)
-        # Randomly select a subset of training data (optional)
-        indices = list(range(N))
-        np.random.seed(123)
-        np.random.shuffle(indices)
-        train_sub = indices[0:int(K)]
-        train_set.data = train_set.data[train_sub]
-        train_set.targets = train_set.targets[train_sub]
+        if opt.subset < 1:
+            K = np.floor(N*opt.subset)
+            # Randomly select a subset of training data (optional)
+            indices = list(range(N))
+            np.random.seed(123)
+            np.random.shuffle(indices)
+            train_sub = indices[0:int(K)]
+            train_set.data = train_set.data[train_sub]
+            train_set.targets = train_set.targets[train_sub]
         # transform from (n, 28, 28) to (n, 1, opt.newsize, opt.newsize)
         train_set.data = torch.unsqueeze(train_set.data, 1);
         test_set.data = torch.unsqueeze(test_set.data, 1)
@@ -80,14 +81,15 @@ def load_data_seg(opt):
         #train_set.targets = train_set.train_labels
         #test_set.targets = test_set.test_labels
         N = len(train_set.targets)
-        K = np.floor(N*opt.subset)
-        # Randomly select a subset of training data (optional)
-        indices = list(range(N))
-        np.random.seed(123)
-        np.random.shuffle(indices)
-        train_sub = indices[0:int(K)]
-        train_set.data = train_set.data[train_sub]
-        train_set.targets = train_set.targets[train_sub]
+        if opt.subset < 1:
+            K = np.floor(N*opt.subset)
+            # Randomly select a subset of training data (optional)
+            indices = list(range(N))
+            np.random.seed(123)
+            np.random.shuffle(indices)
+            train_sub = indices[0:int(K)]
+            train_set.data = train_set.data[train_sub]
+            train_set.targets = train_set.targets[train_sub]
         # transform from (n, 28, 28) to (n, 1, opt.newsize, opt.newsize)
         train_set.data = torch.unsqueeze(train_set.data, 1);
         test_set.data = torch.unsqueeze(test_set.data, 1)

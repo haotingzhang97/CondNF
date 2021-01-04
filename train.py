@@ -12,7 +12,6 @@ import copy
 
 from colorization import *
 from options.train_options import TrainOptions
-from dataloader import load_data
 from data import *
 from models import create_model
 
@@ -105,7 +104,7 @@ if __name__ == '__main__':
         print('Start training')
         best_val_loss = 10000
         for epoch in range(1,
-                           opt.n_epochs + opt.n_epochs_decay + 1):  # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
+                           opt.n_epochs + 1):  # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
             epoch_iter = 0  # the number of training iterations in current epoch, reset to 0 every epoch
 
             for i, data in enumerate(dataset):  # inner loop within one epoch
@@ -124,9 +123,6 @@ if __name__ == '__main__':
                 if opt.model_name == 'MSGAN':
                     lossD_print, lossG_print, losslz_print = model.optimize_parameters()
                 if opt.model_name == 'cglow':
-                    if epoch > opt.n_epochs:
-                        opt.lr *= opt.lr_decay_rate
-                        optim = torch.optim.Adam(model.parameters(), lr=opt.lr)
                     x = data[0].float()
                     y = data[1].float()
                     z, nll = model.forward(x, y)
@@ -187,7 +183,7 @@ if __name__ == '__main__':
 
         print('Start training')
         for epoch in range(1,
-                           opt.n_epochs + opt.n_epochs_decay + 1):  # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
+                           opt.n_epochs + 1):  # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
             epoch_iter = 0  # the number of training iterations in current epoch, reset to 0 every epoch
 
             # create a dataset given opt.dataset_mode and other options
@@ -225,9 +221,6 @@ if __name__ == '__main__':
                 if opt.model_name == 'MSGAN':
                     lossD_print, lossG_print, losslz_print = model.optimize_parameters()
                 if opt.model_name == 'cglow':
-                    if epoch > opt.n_epochs:
-                        opt.lr *= opt.lr_decay_rate
-                        optim = torch.optim.Adam(model.parameters(), lr=opt.lr)
                     x = data[0].float()
                     y = data[1].float()
                     z, nll = model.forward(x, y)

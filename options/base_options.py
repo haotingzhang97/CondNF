@@ -63,7 +63,7 @@ class BaseOptions():
         # Dataset preprocess parameters for cGlow
         parser.add_argument("--label_scale", type=float, default=1)
         parser.add_argument("--label_bias", type=float, default=0.5)
-        parser.add_argument("--x_bins", type=float, default=1.0/256.0)
+        parser.add_argument("--x_bins", type=float, default=1.0/255.0)
         parser.add_argument("--y_bins", type=float, default=0.2)
         parser.add_argument("--mode", type=float, default=1.0)
         parser.add_argument('--lambda_L1flow', type=float, default=0.0, help='weight for L1 loss')

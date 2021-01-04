@@ -12,7 +12,6 @@ import copy
 
 from colorization import *
 from options.train_options import TrainOptions
-from dataloader import load_data
 from data import *
 from models import create_model
 
@@ -101,7 +100,7 @@ if __name__ == '__main__':
 
         print('Start training')
         for epoch in range(1,
-                           opt.n_epochs + opt.n_epochs_decay + 1):  # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
+                           opt.n_epochs + 1):  # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
             epoch_iter = 0  # the number of training iterations in current epoch, reset to 0 every epoch
 
             train_data = preprocess(train_data0, 1.0, 0.0, opt.x_bins, True)
@@ -124,9 +123,6 @@ if __name__ == '__main__':
                     data = [x.to(device) for x in data]
                 total_iters += opt.batch_size
                 epoch_iter += opt.batch_size
-                if epoch > opt.n_epochs:
-                    opt.lr *= opt.lr_decay_rate
-                    optim = torch.optim.Adam(model.parameters(), lr=opt.lr)
                 x = data[0].float()
                 y = data[1].float()
                 z, nll = model.forward(x, y)
@@ -196,7 +192,7 @@ if __name__ == '__main__':
 
         print('Start training')
         for epoch in range(1,
-                           opt.n_epochs + opt.n_epochs_decay + 1):  # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
+                           opt.n_epochs + 1):  # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
             epoch_iter = 0  # the number of training iterations in current epoch, reset to 0 every epoch
 
             train_set_seg0 = torch.zeros((len(train_targets0), 2, opt.newsize, opt.newsize))
@@ -255,9 +251,6 @@ if __name__ == '__main__':
                     data = [x.to(device) for x in data]
                 total_iters += opt.batch_size
                 epoch_iter += opt.batch_size
-                if epoch > opt.n_epochs:
-                    opt.lr *= opt.lr_decay_rate
-                    optim = torch.optim.Adam(model.parameters(), lr=opt.lr)
                 x = data[0].float()
                 y = data[1].float()
                 z, nll = model.forward(x, y)

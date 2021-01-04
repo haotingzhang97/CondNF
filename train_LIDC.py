@@ -77,7 +77,7 @@ if __name__ == '__main__':
     train_loss_vec = np.array([])
     val_loss_vec = np.array([])
     for epoch in range(1,
-                       opt.n_epochs + opt.n_epochs_decay + 1):  # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
+                       opt.n_epochs + 1):  # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
         epoch_iter = 0  # the number of training iterations in current epoch, reset to 0 every epoch
 
         for i, (x, y, _) in enumerate(train_loader):  # inner loop within one epoch
@@ -86,9 +86,6 @@ if __name__ == '__main__':
             y = y.to(device)
             total_iters += opt.batch_size
             epoch_iter += opt.batch_size
-            if epoch > opt.n_epochs:
-                opt.lr *= opt.lr_decay_rate
-                optim = torch.optim.Adam(model.parameters(), lr=opt.lr)
             x = x.float()
             y = y.float()
             if opt.model_name == 'cglow':
